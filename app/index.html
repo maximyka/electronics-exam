@@ -76,13 +76,23 @@
       <nav class="sidebar-nav">
         <button class="nav-item active" data-view="dashboard">
           <span class="nav-icon">📊</span>
-          <span class="nav-label">Дашборд</span>
+          <span class="nav-label">Обзор и прогресс</span>
           <span class="nav-badge" id="badge-total-pct">0%</span>
         </button>
         <button class="nav-item" data-view="catalog">
           <span class="nav-icon">📚</span>
           <span class="nav-label">36 Вопросов</span>
           <span class="nav-count">36</span>
+        </button>
+        <button class="nav-item" data-view="glossary">
+          <span class="nav-icon">📖</span>
+          <span class="nav-label">Словарь терминов</span>
+          <span class="nav-count" id="badge-glossary-count">80</span>
+        </button>
+        <button class="nav-item" data-view="practice">
+          <span class="nav-icon">🔬</span>
+          <span class="nav-label">Лабы и Практика</span>
+          <span class="nav-badge highlight">10 задач</span>
         </button>
         <button class="nav-item" data-view="flashcards">
           <span class="nav-icon">🃏</span>
@@ -92,7 +102,7 @@
         <button class="nav-item" data-view="quiz">
           <span class="nav-icon">🎯</span>
           <span class="nav-label">Билеты и Тренажер</span>
-          <span class="nav-count" id="badge-quiz-total">124 билета</span>
+          <span class="nav-count" id="badge-quiz-total">190 билетов</span>
         </button>
         <button class="nav-item" data-view="exam">
           <span class="nav-icon">🎓</span>
@@ -116,7 +126,7 @@
         </button>
         <div class="sidebar-version-badge" id="sidebar-version-badge">
           <span class="version-dot"></span>
-          <span id="app-version-tag">v1.2.0</span>
+          <span id="app-version-tag">v1.3.0</span>
           <button id="btn-check-updates" class="btn-icon-mini" title="Проверить обновления">🔄</button>
         </div>
       </div>
@@ -679,6 +689,95 @@
         </div>
       </section>
 
+      <!-- View: СЛОВАРЬ (Glossary) -->
+      <section id="view-glossary" class="app-view">
+        <div class="view-inner glossary-inner">
+          <div class="glossary-header">
+            <div class="glossary-title-group">
+              <h1>📖 Словарь терминов курса</h1>
+              <p class="section-desc">80 фундаментальных понятий и определений по всем разделам электроники с формулами и быстрыми ссылками на конспекты.</p>
+            </div>
+            <div class="search-box-wrapper glossary-search-wrapper">
+              <input type="text" id="glossary-search-input" placeholder="🔍 Поиск термина, формулы или физического эффекта...">
+            </div>
+          </div>
+
+          <!-- Фильтры категорий -->
+          <div class="glossary-cat-chips" id="glossary-category-filters">
+            <button class="cat-chip active" data-cat="all">Все термины (80)</button>
+            <button class="cat-chip" data-cat="Полупроводники">Полупроводники</button>
+            <button class="cat-chip" data-cat="Диоды">Диоды</button>
+            <button class="cat-chip" data-cat="Специальные диоды">Спец. диоды</button>
+            <button class="cat-chip" data-cat="Оптоэлектроника">Оптоэлектроника</button>
+            <button class="cat-chip" data-cat="Транзисторы">Транзисторы</button>
+            <button class="cat-chip" data-cat="Усилители">Усилители</button>
+            <button class="cat-chip" data-cat="Операционные усилители">ОУ</button>
+            <button class="cat-chip" data-cat="Генераторы">Генераторы</button>
+            <button class="cat-chip" data-cat="Длинные линии">Длинные линии</button>
+            <button class="cat-chip" data-cat="ЦАП и АЦП">ЦАП и АЦП</button>
+            <button class="cat-chip" data-cat="Цифровая логика">Логика</button>
+            <button class="cat-chip" data-cat="Триггеры">Триггеры</button>
+            <button class="cat-chip" data-cat="Память">Память</button>
+            <button class="cat-chip" data-cat="Цифровые фильтры">Фильтры</button>
+            <button class="cat-chip" data-cat="Индикаторы">Индикаторы</button>
+          </div>
+
+          <!-- Алфавитная лента быстрого перехода A-Z -->
+          <div class="glossary-alpha-bar" id="glossary-alpha-bar">
+            <!-- Динамически заполняется буквами -->
+          </div>
+
+          <!-- Сетка карточек определений -->
+          <div id="glossary-cards-grid" class="glossary-grid">
+            <!-- Динамически заполняется -->
+          </div>
+        </div>
+      </section>
+
+      <!-- View: ЛАБОРАТОРНЫЕ И ПРАКТИКА (Practice & Labs) -->
+      <section id="view-practice" class="app-view">
+        <div class="view-inner practice-inner">
+          <div class="practice-header">
+            <div class="practice-title-group">
+              <h1>🔬 Лабораторные и Задачи</h1>
+              <p class="section-desc">Методические материалы по 5 лабораторным работам курса и интерактивный практикум решения экзаменационных расчетных задач с мгновенной проверкой ответа.</p>
+            </div>
+            <!-- Переключатель режима: Задачи / Лабы -->
+            <div class="practice-tabs-switch">
+              <button class="practice-subtab-btn active" id="btn-subtab-tasks">
+                <span>🧮 Решение задач</span>
+                <span class="subtab-badge" id="tasks-solved-badge">0 / 10</span>
+              </button>
+              <button class="practice-subtab-btn" id="btn-subtab-labs">
+                <span>🔬 Лабораторные (1–5)</span>
+                <span class="subtab-badge">5 работ</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Блок интерактивных расчетных задач -->
+          <div id="subview-tasks-pane" class="practice-pane active">
+            <div class="tasks-welcome-banner">
+              <div class="banner-icon">⚡️</div>
+              <div class="banner-text">
+                <h3>Экзаменационный тренажер задач</h3>
+                <p>Решайте задачи, вводите числовой ответ и жмите «Проверить ответ». За каждую верно решенную задачу вы получаете <b>+25 XP</b>! В любой момент можно открыть подсказку или пошаговое математическое решение с формулами.</p>
+              </div>
+            </div>
+            <div id="practice-tasks-grid" class="practice-tasks-grid">
+              <!-- Задачи динамически -->
+            </div>
+          </div>
+
+          <!-- Блок лабораторных работ -->
+          <div id="subview-labs-pane" class="practice-pane" style="display:none;">
+            <div id="practice-labs-accordion" class="practice-labs-container">
+              <!-- Лабы динамически -->
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- View 7: ШПАРГАЛКА (Cheatsheet) -->
       <section id="view-cheatsheet" class="app-view">
         <div class="view-inner cheatsheet-inner">
@@ -699,6 +798,34 @@
       </section>
     </main>
 
+    <!-- Всплывающая карточка определения (Definition Popover / Bottom Sheet) -->
+    <div id="definition-popover-overlay" class="def-popover-overlay" style="display:none;">
+      <div class="def-popover-card">
+        <div class="def-popover-header">
+          <div class="def-title-group">
+            <span class="def-cat-pill" id="def-popover-cat">Категория</span>
+            <h3 id="def-popover-title">Название термина</h3>
+          </div>
+          <button id="def-popover-close" class="def-close-btn" aria-label="Закрыть">✕</button>
+        </div>
+        <div class="def-popover-body">
+          <div id="def-popover-formula-box" class="def-formula-box" style="display:none;">
+            <div id="def-popover-formula"></div>
+          </div>
+          <p class="def-short-text" id="def-popover-short"></p>
+          <div class="def-full-text" id="def-popover-full"></div>
+        </div>
+        <div class="def-popover-footer">
+          <button id="def-popover-goto-q" class="def-action-btn secondary">
+            <span>📚 Перейти к билету</span>
+          </button>
+          <button id="def-popover-goto-glossary" class="def-action-btn primary">
+            <span>📖 Открыть в словаре</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Нижняя панель навигации для iPhone (Mobile Tabbar) -->
     <nav id="mobile-tabbar">
       <button class="tabbar-item active" data-view="dashboard">
@@ -709,9 +836,13 @@
         <span class="tabbar-icon">📚</span>
         <span class="tabbar-label">Темы</span>
       </button>
-      <button class="tabbar-item" data-view="flashcards">
-        <span class="tabbar-icon">🃏</span>
-        <span class="tabbar-label">Карточки</span>
+      <button class="tabbar-item" data-view="glossary">
+        <span class="tabbar-icon">📖</span>
+        <span class="tabbar-label">Словарь</span>
+      </button>
+      <button class="tabbar-item" data-view="practice">
+        <span class="tabbar-icon">🔬</span>
+        <span class="tabbar-label">Практика</span>
       </button>
       <button class="tabbar-item" data-view="quiz">
         <span class="tabbar-icon">🎯</span>
@@ -720,10 +851,6 @@
       <button class="tabbar-item" data-view="exam">
         <span class="tabbar-icon">🎓</span>
         <span class="tabbar-label">Экзамен</span>
-      </button>
-      <button class="tabbar-item" data-view="cheatsheet">
-        <span class="tabbar-icon">⚡</span>
-        <span class="tabbar-label">Шпора</span>
       </button>
     </nav>
 
