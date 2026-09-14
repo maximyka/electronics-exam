@@ -131,7 +131,7 @@
         </button>
         <div class="sidebar-version-badge" id="sidebar-version-badge">
           <span class="version-dot"></span>
-          <span id="app-version-tag">v1.5.0</span>
+          <span id="app-version-tag">v1.5.1</span>
           <button id="btn-check-updates" class="btn-icon-mini" title="Проверить обновления">🔄</button>
         </div>
       </div>
@@ -473,9 +473,11 @@
             </div>
             
             <div class="fc-part-select-wrapper">
-              <label for="fc-part-filter">Тема:</label>
+              <label for="fc-part-filter">Режим / Тема:</label>
               <select id="fc-part-filter">
-                <option value="all">Все темы (214 карточек)</option>
+                <option value="all">⚡️ Все экзаменационные карточки (214)</option>
+                <option value="definitions">📖 Карточки с определениями (80 терминов)</option>
+                <option value="all_with_defs">🌟 Полный курс: Билеты + Определения (294)</option>
                 <option value="1">Часть 1. Полупроводники и диоды (30)</option>
                 <option value="2">Часть 2. Транзисторы и тиристоры (30)</option>
                 <option value="3">Часть 3. Усилители и ОУ (32)</option>
@@ -495,20 +497,44 @@
             </div>
           </div>
 
-          <!-- Сама 3D-карточка -->
+          <!-- Навигационная панель перелистывания (удобно на телефоне и ПК) -->
+          <div class="fc-nav-bar">
+            <button class="fc-nav-btn" id="btn-fc-prev" title="Предыдущая карточка (или свайп вправо)">
+              <span>←</span> Назад
+            </button>
+            <button class="fc-nav-btn flip-btn" id="btn-fc-flip" title="Перевернуть карточку (или тап)">
+              <span>🔄</span> Перевернуть
+            </button>
+            <button class="fc-nav-btn primary" id="btn-fc-next" title="Следующая карточка (или свайп влево)">
+              Вперед <span>→</span>
+            </button>
+          </div>
+
+          <!-- Сама 3D-карточка со свайпами и стрелками -->
           <div class="fc-stage">
+            <button id="btn-fc-arrow-prev" class="fc-side-arrow prev" title="Предыдущая карточка" aria-label="Предыдущая карточка">‹</button>
             <div id="active-flashcard" class="flashcard-card" tabindex="0">
               <div class="card-face card-front">
-                <div class="card-top-tag">ВОПРОС / ТЕРМИН</div>
+                <div class="card-top-tag" id="fc-front-tag">ВОПРОС / ТЕРМИН</div>
                 <div class="card-main-text" id="fc-front-text">Вопрос...</div>
-                <div class="card-hint">Нажмите для переворота (или Пробел) 🔄</div>
+                <div class="card-hint">👆 Нажмите для переворота • свайп для перелистывания</div>
               </div>
               <div class="card-face card-back">
-                <div class="card-top-tag answer">ОТВЕТ / СУТЬ</div>
+                <div class="card-top-tag answer" id="fc-back-tag">ОТВЕТ / СУТЬ</div>
                 <div class="card-main-text answer-text" id="fc-back-text">Ответ...</div>
-                <div class="card-hint">Оцените свои знания ниже 👇</div>
+                <div class="card-hint">Оцените свои знания ниже или свайпайте дальше 👇</div>
               </div>
             </div>
+            <button id="btn-fc-arrow-next" class="fc-side-arrow next" title="Следующая карточка" aria-label="Следующая карточка">›</button>
+          </div>
+
+          <!-- Мобильная подсказка жестов свайпа -->
+          <div class="fc-mobile-hint">
+            <span>👈 <strong>Свайп влево:</strong> след.</span>
+            <span>•</span>
+            <span><strong>Тап:</strong> перевернуть</span>
+            <span>•</span>
+            <span><strong>Свайп вправо:</strong> пред. 👉</span>
           </div>
 
           <!-- Кнопки оценки -->
@@ -780,6 +806,11 @@
             <div class="glossary-title-group">
               <h1>📖 Словарь терминов курса</h1>
               <p class="section-desc">80 фундаментальных понятий и определений по всем разделам электроники с формулами и быстрыми ссылками на конспекты.</p>
+              <div style="margin-top: 10px;">
+                <button id="btn-practice-glossary-cards" class="primary-btn" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;padding:8px 16px;">
+                  <span>🃏</span> Учить эти 80 определений во флеш-карточках →
+                </button>
+              </div>
             </div>
             <div class="search-box-wrapper glossary-search-wrapper">
               <input type="text" id="glossary-search-input" placeholder="🔍 Поиск термина, формулы или физического эффекта...">

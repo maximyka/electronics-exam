@@ -6,7 +6,7 @@
 (function() {
   'use strict';
 
-  const CURRENT_APP_VERSION = '1.5.0';
+  const CURRENT_APP_VERSION = '1.5.1';
   let swRegistration = null;
 
   // Регистрация Service Worker для PWA с поддержкой мгновенных обновлений
@@ -702,13 +702,27 @@
   }
 
   /* ==========================================================================
-     ФЛЕШ-КАРТОЧКИ
+     ФЛЕШ-КАРТОЧКИ (СВАЙПЫ, ЛИСТАНИЕ, ОПРЕДЕЛЕНИЯ И КВИЗ)
      ========================================================================== */
+  function getDefinitionCards() {
+    return (data.glossary || []).map(g => ({
+      id: 'def_' + g.id,
+      partId: 'definitions',
+      isDefinition: true,
+      front: `<div class="fc-def-category">${g.category || 'Определение'}</div><div class="fc-def-term">${g.term}</div><div class="fc-def-hint">Назовите точное физическое определение и формулу</div>`,
+      back: `<div class="fc-def-back-header">${g.term}</div><strong>Определение:</strong><br>${g.shortDef}<br><br>${g.formula ? `$$\n${g.formula}\n$$<br>` : ''}<strong>Физический смысл:</strong><br>${g.fullDef}`
+    }));
+  }
+
   function initFlashcardsDeck() {
     const filter = document.getElementById('fc-part-filter')?.value || 'all';
     
     if (filter === 'all') {
       activeFlashcardDeck = [...data.flashcards];
+    } else if (filter === 'definitions') {
+      activeFlashcardDeck = getDefinitionCards();
+    } else if (filter === 'all_with_defs') {
+      activeFlashcardDeck = [...data.flashcards, ...getDefinitionCards()];
     } else {
       const partId = parseInt(filter, 10);
       activeFlashcardDeck = data.flashcards.filter(fc => fc.partId === partId);
@@ -731,9 +745,18 @@
 
     const frontEl = document.getElementById('fc-front-text');
     const backEl = document.getElementById('fc-back-text');
+    const frontTagEl = document.getElementById('fc-front-tag');
+    const backTagEl = document.getElementById('fc-back-tag');
     const currentIdxEl = document.getElementById('fc-current-idx');
     const totalCountEl = document.getElementById('fc-total-count');
     const progressFillEl = document.getElementById('fc-progress-fill');
+
+    if (frontTagEl) {
+      frontTagEl.textContent = card.isDefinition ? 'ТЕРМИН / ОПРЕДЕЛЕНИЕ' : 'ВОПРОС / ТЕРМИН';
+    }
+    if (backTagEl) {
+      backTagEl.textContent = card.isDefinition ? 'ОПРЕДЕЛЕНИЕ И ФОРМУЛА' : 'ОТВЕТ / СУТЬ';
+    }
 
     if (frontEl) {
       frontEl.innerHTML = (card.front || '').replace(/\n/g, '<br>');
@@ -762,15 +785,46 @@
     }
   }
 
+  function triggerCardTransition(direction, callback) {
+    const cardEl = document.getElementById('active-flashcard');
+    if (!cardEl) {
+      if (callback) callback();
+      return;
+    }
+    const outClass = direction === 'left' ? 'slide-out-left' : 'slide-out-right';
+    const inClass = direction === 'left' ? 'slide-in-right' : 'slide-in-left';
+    
+    cardEl.classList.add(outClass);
+    setTimeout(() => {
+      cardEl.classList.remove(outClass);
+      if (callback) callback();
+      cardEl.classList.add(inClass);
+      setTimeout(() => {
+        cardEl.classList.remove(inClass);
+      }, 250);
+    }, 160);
+  }
+
+  function nextFlashcard() {
+    if (activeFlashcardDeck.length === 0) return;
+    activeFlashcardIndex = (activeFlashcardIndex + 1) % activeFlashcardDeck.length;
+    renderCurrentFlashcard();
+  }
+
+  function prevFlashcard() {
+    if (activeFlashcardDeck.length === 0) return;
+    activeFlashcardIndex = (activeFlashcardIndex - 1 + activeFlashcardDeck.length) % activeFlashcardDeck.length;
+    renderCurrentFlashcard();
+  }
+
   function rateFlashcard(rating) {
     if (activeFlashcardDeck.length === 0) return;
     const card = activeFlashcardDeck[activeFlashcardIndex];
-    state.fcStatus[card.id] = rating;
-    saveState();
-
-    // Переход к следующей карточке
-    activeFlashcardIndex = (activeFlashcardIndex + 1) % activeFlashcardDeck.length;
-    renderCurrentFlashcard();
+    if (card && card.id) {
+      state.fcStatus[card.id] = rating;
+      saveState();
+    }
+    triggerCardTransition('left', nextFlashcard);
   }
 
   /* ==========================================================================
@@ -1420,15 +1474,13 @@
         }
       } else if (e.code === 'ArrowRight') {
         if (currentView === 'flashcards') {
-          activeFlashcardIndex = (activeFlashcardIndex + 1) % activeFlashcardDeck.length;
-          renderCurrentFlashcard();
+          triggerCardTransition('left', nextFlashcard);
         } else if (currentView === 'detail') {
           if (currentQuestionId < data.questions.length) openQuestionDetail(currentQuestionId + 1);
         }
       } else if (e.code === 'ArrowLeft') {
         if (currentView === 'flashcards') {
-          activeFlashcardIndex = (activeFlashcardIndex - 1 + activeFlashcardDeck.length) % activeFlashcardDeck.length;
-          renderCurrentFlashcard();
+          triggerCardTransition('right', prevFlashcard);
         } else if (currentView === 'detail') {
           if (currentQuestionId > 1) openQuestionDetail(currentQuestionId - 1);
         }
@@ -1574,21 +1626,96 @@
       });
     }
 
-    // 11. Флеш-карточки клик и фильтр
+    // 11. Флеш-карточки: клики, свайпы, навигация и фильтр
     const flashcardEl = document.getElementById('active-flashcard');
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let isTouchSwiping = false;
+
     if (flashcardEl) {
-      flashcardEl.addEventListener('click', flipFlashcard);
+      flashcardEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+        isTouchSwiping = false;
+      }, { passive: true });
+
+      flashcardEl.addEventListener('touchmove', (e) => {
+        if (e.touches.length !== 1) return;
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const diffX = currentX - touchStartX;
+        const diffY = currentY - touchStartY;
+
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+          isTouchSwiping = true;
+          const rot = diffX * 0.04;
+          flashcardEl.style.transform = `${isCardFlipped ? 'rotateY(180deg) ' : ''}translateX(${diffX}px) rotate(${rot}deg)`;
+        }
+      }, { passive: true });
+
+      flashcardEl.addEventListener('touchend', (e) => {
+        flashcardEl.style.transform = '';
+
+        if (!isTouchSwiping) {
+          flipFlashcard();
+          return;
+        }
+
+        const touchEndX = e.changedTouches[0].clientX;
+        const diffX = touchEndX - touchStartX;
+        const elapsed = Date.now() - touchStartTime;
+
+        if (diffX < -40 || (diffX < -25 && elapsed < 280)) {
+          triggerCardTransition('left', nextFlashcard);
+        } else if (diffX > 40 || (diffX > 25 && elapsed < 280)) {
+          triggerCardTransition('right', prevFlashcard);
+        }
+      });
+
+      flashcardEl.addEventListener('click', () => {
+        if (Date.now() - touchStartTime < 350) return;
+        flipFlashcard();
+      });
     }
+
     const fcPartFilter = document.getElementById('fc-part-filter');
     if (fcPartFilter) {
       fcPartFilter.addEventListener('change', initFlashcardsDeck);
     }
+
+    const btnFcPrev = document.getElementById('btn-fc-prev');
+    const btnFcNext = document.getElementById('btn-fc-next');
+    const btnFcFlip = document.getElementById('btn-fc-flip');
+    const btnFcArrowPrev = document.getElementById('btn-fc-arrow-prev');
+    const btnFcArrowNext = document.getElementById('btn-fc-arrow-next');
+
+    if (btnFcPrev) btnFcPrev.addEventListener('click', () => triggerCardTransition('right', prevFlashcard));
+    if (btnFcNext) btnFcNext.addEventListener('click', () => triggerCardTransition('left', nextFlashcard));
+    if (btnFcFlip) btnFcFlip.addEventListener('click', flipFlashcard);
+    if (btnFcArrowPrev) btnFcArrowPrev.addEventListener('click', () => triggerCardTransition('right', prevFlashcard));
+    if (btnFcArrowNext) btnFcArrowNext.addEventListener('click', () => triggerCardTransition('left', nextFlashcard));
+
     const btnFcBad = document.getElementById('btn-fc-bad');
     const btnFcOk = document.getElementById('btn-fc-ok');
     const btnFcGood = document.getElementById('btn-fc-good');
     if (btnFcBad) btnFcBad.addEventListener('click', () => rateFlashcard('bad'));
     if (btnFcOk) btnFcOk.addEventListener('click', () => rateFlashcard('ok'));
     if (btnFcGood) btnFcGood.addEventListener('click', () => rateFlashcard('good'));
+
+    const btnPracticeGlossary = document.getElementById('btn-practice-glossary-cards');
+    if (btnPracticeGlossary) {
+      btnPracticeGlossary.addEventListener('click', () => {
+        switchView('flashcards');
+        const filterEl = document.getElementById('fc-part-filter');
+        if (filterEl) {
+          filterEl.value = 'definitions';
+          initFlashcardsDeck();
+        }
+      });
+    }
 
     // 12. Квиз кнопки
     const exitQuizBtn = document.getElementById('btn-quiz-exit');
