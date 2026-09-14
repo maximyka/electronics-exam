@@ -1,4 +1,4 @@
-const CACHE_NAME = 'electronics-exam-v1.1.0';
+const CACHE_NAME = 'electronics-exam-v1.2.0';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,9 @@ const ASSETS = [
   './app.js',
   './exam_data.js',
   './version.json',
+  './katex/katex.min.css',
+  './katex/katex.min.js',
+  './katex/auto-render.min.js',
   './icon-192.png',
   './icon-512.png',
   './icon.png',

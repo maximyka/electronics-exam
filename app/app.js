@@ -6,7 +6,7 @@
 (function() {
   'use strict';
 
-  const CURRENT_APP_VERSION = '1.1.0';
+  const CURRENT_APP_VERSION = '1.2.0';
   let swRegistration = null;
 
   // Регистрация Service Worker для PWA с поддержкой мгновенных обновлений
@@ -125,7 +125,11 @@
     checklist: {},      // { [qId + '_' + idx]: boolean }
     theme: 'dark',
     currentPartFilter: 'all',
-    currentStatusFilter: 'all'
+    currentStatusFilter: 'all',
+    xp: 0,
+    streak: 1,
+    lastActiveDate: new Date().toISOString().slice(0, 10),
+    mistakes: []        // [questionId, ...]
   };
 
   // Загрузка состояния
@@ -138,6 +142,21 @@
     console.warn('Could not load state from localStorage', e);
   }
 
+  // Расчет серии занятий
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (state.lastActiveDate && state.lastActiveDate !== todayStr) {
+    const d1 = new Date(todayStr);
+    const d0 = new Date(state.lastActiveDate);
+    const diffDays = Math.round((d1 - d0) / (1000 * 60 * 60 * 24));
+    if (diffDays === 1) {
+      state.streak += 1;
+    } else if (diffDays > 1) {
+      state.streak = 1;
+    }
+  }
+  state.lastActiveDate = todayStr;
+  if (!Array.isArray(state.mistakes)) state.mistakes = [];
+
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -145,6 +164,46 @@
       console.warn('Could not save state', e);
     }
     updateAllProgress();
+    updateGamificationUI();
+  }
+
+  // Рендерер KaTeX формул
+  function renderMath(element) {
+    if (!element) return;
+    if (window.renderMathInElement) {
+      try {
+        window.renderMathInElement(element, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+      } catch (err) {
+        // Игнорируем предупреждения парсера
+      }
+    }
+  }
+
+  // Обновление элементов геймификации в интерфейсе
+  function updateGamificationUI() {
+    const sidebarStreak = document.getElementById('sidebar-streak-count');
+    const sidebarXp = document.getElementById('sidebar-xp-count');
+    const sidebarMistakesPill = document.getElementById('sidebar-mistakes-pill');
+    const sidebarMistakesCount = document.getElementById('sidebar-mistakes-count');
+    const badgeMistakes = document.getElementById('badge-mistakes-counter');
+    const mStreak = document.getElementById('m-streak-val');
+    const mXp = document.getElementById('m-xp-val');
+
+    if (sidebarStreak) sidebarStreak.textContent = `${state.streak} дн.`;
+    if (sidebarXp) sidebarXp.textContent = `${state.xp} XP`;
+    if (mStreak) mStreak.textContent = state.streak;
+    if (mXp) mXp.textContent = state.xp;
+
+    const mistakesLen = state.mistakes.length;
+    if (sidebarMistakesPill) sidebarMistakesPill.style.display = mistakesLen > 0 ? 'flex' : 'none';
+    if (sidebarMistakesCount) sidebarMistakesCount.textContent = mistakesLen;
+    if (badgeMistakes) badgeMistakes.textContent = `${mistakesLen} ошибок`;
   }
 
   // Текущее состояние вьюх
@@ -154,10 +213,14 @@
   let activeFlashcardDeck = [];
   let isCardFlipped = false;
   
-  // Квиз
+  // Квиз & Тренажер в стиле Duolingo / Хочу Водить
+  let activeQuizMode = 'topics'; // 'topics' | 'marathon' | 'mistakes' | 'exam' | 'express'
   let currentQuizPartId = 1;
+  let activeQuestions = [];
   let currentQuizStep = 0;
   let currentQuizScore = 0;
+  let currentQuizXpGained = 0;
+  let currentExamLives = 2;
 
   // Экзамен
   let examTimerSeconds = 20 * 60;
@@ -617,6 +680,11 @@
       nextBtn.onclick = () => openQuestionDetail(q.id + 1);
     }
 
+    // Рендерим формулы KaTeX
+    renderMath(summaryContainer);
+    renderMath(formulasContainer);
+    renderMath(titleEl);
+
     switchView('detail');
   }
 
@@ -683,92 +751,188 @@
   }
 
   /* ==========================================================================
-     КВИЗЫ И ТЕСТИРОВАНИЕ
+     ТРЕНАЖЕР БИЛЕТОВ (DUOLINGO & ХОЧУ ВОДИТЬ СТИЛЬ)
      ========================================================================== */
   function renderQuizSelector() {
-    const container = document.getElementById('quiz-parts-selector');
-    const player = document.getElementById('quiz-player-container');
-    const results = document.getElementById('quiz-result-container');
-
-    if (player) player.style.display = 'none';
-    if (results) results.style.display = 'none';
-    if (!container) return;
-
-    container.style.display = 'grid';
-    container.innerHTML = data.modules.map(m => {
-      const best = state.quizScores[m.id];
-      let bestStr = 'Не пройден';
-      if (best) bestStr = `Рекорд: ${best.score}/${best.total} (${best.pct}%)`;
-
-      return `
-        <div class="quiz-part-card" data-part-id="${m.id}">
-          <div style="font-size:24px;margin-bottom:8px;">${m.icon}</div>
-          <h3>${m.title}</h3>
-          <div class="quiz-part-meta">
-            <span>5 вопросов</span>
-            <span style="color:${best && best.pct >= 80 ? 'var(--accent-green)' : 'var(--text-muted)'};font-weight:600;">${bestStr}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    container.querySelectorAll('.quiz-part-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const pid = parseInt(card.dataset.partId, 10);
-        startQuizForPart(pid);
-      });
-    });
-  }
-
-  function startQuizForPart(partId) {
-    currentQuizPartId = partId;
-    currentQuizStep = 0;
-    currentQuizScore = 0;
-
+    const hub = document.getElementById('quiz-hub-container');
     const selector = document.getElementById('quiz-parts-selector');
     const player = document.getElementById('quiz-player-container');
     const results = document.getElementById('quiz-result-container');
+    const sheet = document.getElementById('duo-sheet');
 
-    if (selector) selector.style.display = 'none';
+    if (player) player.style.display = 'none';
     if (results) results.style.display = 'none';
+    if (sheet) sheet.style.display = 'none';
+    if (hub) hub.style.display = 'block';
+
+    updateGamificationUI();
+
+    // Обновляем бейдж общего числа вопросов в сайдбаре
+    const totalBankQuestions = data.quizzes.reduce((acc, q) => acc + q.questions.length, 0);
+    const badgeTotal = document.getElementById('badge-quiz-total');
+    if (badgeTotal) badgeTotal.textContent = `${totalBankQuestions} билетов`;
+
+    // 1. Инициализируем карточки режимов (Хочу Водить)
+    document.querySelectorAll('.training-mode-card').forEach(card => {
+      card.onclick = () => {
+        const mode = card.dataset.mode;
+        startTrainingMode(mode);
+      };
+    });
+
+    // 2. Рендерим список тем с количеством вопросов и звездами
+    if (selector) {
+      selector.innerHTML = data.modules.map(m => {
+        const quizObj = data.quizzes.find(q => q.partId === m.id);
+        const qCount = quizObj ? quizObj.questions.length : 0;
+        const best = state.quizScores[m.id];
+        
+        let starStr = '☆☆☆';
+        let bestStr = 'Не пройден';
+        if (best) {
+          bestStr = `Рекорд: ${best.score}/${best.total} (${best.pct}%)`;
+          if (best.pct >= 90) starStr = '⭐⭐⭐';
+          else if (best.pct >= 70) starStr = '⭐⭐☆';
+          else if (best.pct >= 50) starStr = '⭐☆☆';
+        }
+
+        return `
+          <div class="quiz-part-card" data-part-id="${m.id}">
+            <div style="font-size:26px;margin-bottom:8px;">${m.icon}</div>
+            <h3>${m.title}</h3>
+            <div class="quiz-part-meta">
+              <span><b>${qCount}</b> вопросов</span>
+              <span style="font-size:14px;letter-spacing:2px;">${starStr}</span>
+            </div>
+            <div style="margin-top:6px;font-size:11px;color:${best && best.pct >= 70 ? 'var(--accent-green)' : 'var(--text-muted)'};font-weight:600;">
+              ${bestStr}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      selector.querySelectorAll('.quiz-part-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pid = parseInt(card.dataset.partId, 10);
+          startTrainingMode('topics', pid);
+        });
+      });
+    }
+  }
+
+  function startTrainingMode(mode, partId = 1) {
+    activeQuizMode = mode;
+    currentQuizPartId = partId;
+    currentQuizStep = 0;
+    currentQuizScore = 0;
+    currentQuizXpGained = 0;
+
+    const allQuizzesQuestions = data.quizzes.flatMap(q => q.questions);
+
+    if (mode === 'topics') {
+      const quizObj = data.quizzes.find(q => q.partId === partId);
+      activeQuestions = quizObj ? [...quizObj.questions] : [];
+    } else if (mode === 'marathon') {
+      activeQuestions = [...allQuizzesQuestions].sort(() => Math.random() - 0.5);
+    } else if (mode === 'mistakes') {
+      activeQuestions = allQuizzesQuestions.filter(q => state.mistakes.includes(q.id));
+      if (activeQuestions.length === 0) {
+        alert('🎉 Отлично! У вас нет активных ошибок. Выберите тему или Марафон для тренировки!');
+        return;
+      }
+      activeQuestions.sort(() => Math.random() - 0.5);
+    } else if (mode === 'exam') {
+      currentExamLives = 2; // Максимум 2 ошибки!
+      activeQuestions = [...allQuizzesQuestions].sort(() => Math.random() - 0.5).slice(0, 20);
+    } else if (mode === 'express') {
+      activeQuestions = [...allQuizzesQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+    }
+
+    if (activeQuestions.length === 0) {
+      alert('Вопросы для выбранного режима не найдены.');
+      return;
+    }
+
+    const hub = document.getElementById('quiz-hub-container');
+    const player = document.getElementById('quiz-player-container');
+    const results = document.getElementById('quiz-result-container');
+    const sheet = document.getElementById('duo-sheet');
+
+    if (hub) hub.style.display = 'none';
+    if (results) results.style.display = 'none';
+    if (sheet) sheet.style.display = 'none';
     if (player) player.style.display = 'block';
 
     renderQuizStep();
   }
 
   function renderQuizStep() {
-    const quizObj = data.quizzes.find(q => q.partId === currentQuizPartId);
-    if (!quizObj || !quizObj.questions[currentQuizStep]) return;
+    if (!activeQuestions[currentQuizStep]) {
+      finishQuiz();
+      return;
+    }
 
-    const q = quizObj.questions[currentQuizStep];
-    const total = quizObj.questions.length;
+    const q = activeQuestions[currentQuizStep];
+    const total = activeQuestions.length;
 
-    // Скрыть объяснение
-    const expBox = document.getElementById('quiz-explanation-box');
-    if (expBox) expBox.style.display = 'none';
+    // Скрыть всплывающий нижний баннер Duolingo
+    const sheet = document.getElementById('duo-sheet');
+    if (sheet) sheet.style.display = 'none';
 
     // Шаг и прогресс
-    const stepNum = document.getElementById('quiz-step-num');
-    const totalSteps = document.getElementById('quiz-total-steps');
+    const stepCounter = document.getElementById('duo-step-counter');
     const fillBar = document.getElementById('quiz-progress-fill');
+    const topicBadge = document.getElementById('quiz-topic-badge');
     const qText = document.getElementById('quiz-question-text');
+    const heartsBox = document.getElementById('duo-hearts-box');
+    const heartsText = document.getElementById('duo-hearts-text');
 
-    if (stepNum) stepNum.textContent = currentQuizStep + 1;
-    if (totalSteps) totalSteps.textContent = total;
-    if (fillBar) fillBar.style.width = `${Math.round(((currentQuizStep + 1) / total) * 100)}%`;
-    if (qText) qText.textContent = q.text;
+    if (stepCounter) stepCounter.textContent = `${currentQuizStep + 1} / ${total}`;
+    if (fillBar) fillBar.style.width = `${Math.round((currentQuizStep / total) * 100)}%`;
 
-    // Опции
+    if (topicBadge) {
+      if (activeQuizMode === 'topics') {
+        const mod = data.modules.find(m => m.id === currentQuizPartId);
+        topicBadge.textContent = mod ? mod.title : 'Тема';
+      } else if (activeQuizMode === 'marathon') {
+        topicBadge.textContent = `🏎️ Марафон • Вопрос ${currentQuizStep + 1} из ${total}`;
+      } else if (activeQuizMode === 'mistakes') {
+        topicBadge.textContent = `🛠️ Работа над ошибками • Вопрос ${currentQuizStep + 1} из ${total}`;
+      } else if (activeQuizMode === 'exam') {
+        topicBadge.textContent = `🏆 Экзамен ГАИ / Сессия • Билет ${currentQuizStep + 1} из 20`;
+      } else if (activeQuizMode === 'express') {
+        topicBadge.textContent = `⚡ Экспресс • Вопрос ${currentQuizStep + 1} из 10`;
+      }
+    }
+
+    if (heartsBox && heartsText) {
+      if (activeQuizMode === 'exam') {
+        heartsBox.style.display = 'flex';
+        heartsText.textContent = currentExamLives;
+      } else {
+        heartsBox.style.display = 'none';
+      }
+    }
+
+    if (qText) {
+      qText.textContent = q.text;
+      renderMath(qText);
+    }
+
+    // Опции ответов (Duolingo 3D стиль)
     const optionsContainer = document.getElementById('quiz-options-list');
     if (optionsContainer) {
       optionsContainer.innerHTML = q.options.map((opt, idx) => `
-        <button class="quiz-option-btn" data-idx="${idx}">
-          <span style="font-weight:700;color:var(--accent-blue);width:20px;">${['A', 'B', 'C', 'D'][idx]}</span>
-          <span>${opt}</span>
+        <button class="duo-option-btn" data-idx="${idx}">
+          <span class="duo-num-badge">${idx + 1}</span>
+          <span class="duo-opt-text">${opt}</span>
         </button>
       `).join('');
 
-      optionsContainer.querySelectorAll('.quiz-option-btn').forEach(btn => {
+      renderMath(optionsContainer);
+
+      optionsContainer.querySelectorAll('.duo-option-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const chosen = parseInt(btn.dataset.idx, 10);
           handleQuizAnswer(q, chosen, btn, optionsContainer);
@@ -778,36 +942,77 @@
   }
 
   function handleQuizAnswer(q, chosenIdx, clickedBtn, container) {
-    // Блокируем все кнопки
-    container.querySelectorAll('.quiz-option-btn').forEach(b => b.disabled = true);
+    // Блокируем все варианты
+    container.querySelectorAll('.duo-option-btn').forEach(b => b.classList.add('disabled'));
 
-    const isCorrect = chosenIdx === q.correctIndex;
+    const isCorrect = (chosenIdx === q.correctIndex);
+    const sheet = document.getElementById('duo-sheet');
+    const sheetIcon = document.getElementById('duo-sheet-icon');
+    const sheetTitle = document.getElementById('duo-sheet-title');
+    const sheetMsg = document.getElementById('duo-sheet-msg');
+    const sheetBtn = document.getElementById('btn-quiz-next');
+
     if (isCorrect) {
       clickedBtn.classList.add('correct');
       currentQuizScore++;
+      currentQuizXpGained += 10;
+      state.xp += 10;
+
+      // Если был в ошибках — убираем его
+      const errIdx = state.mistakes.indexOf(q.id);
+      if (errIdx !== -1) {
+        state.mistakes.splice(errIdx, 1);
+      }
+
+      if (sheet) {
+        sheet.className = 'duo-action-sheet sheet-correct';
+        if (sheetIcon) sheetIcon.textContent = '🎉';
+        if (sheetTitle) sheetTitle.textContent = 'Великолепно! +10 XP';
+        if (sheetMsg) {
+          sheetMsg.innerHTML = q.explanation;
+          renderMath(sheetMsg);
+        }
+      }
     } else {
       clickedBtn.classList.add('wrong');
-      // Подсветить правильный
       const correctBtn = container.querySelector(`[data-idx="${q.correctIndex}"]`);
       if (correctBtn) correctBtn.classList.add('correct');
+
+      // Добавляем в ошибки
+      if (!state.mistakes.includes(q.id)) {
+        state.mistakes.push(q.id);
+      }
+
+      if (activeQuizMode === 'exam') {
+        currentExamLives--;
+        const heartsText = document.getElementById('duo-hearts-text');
+        if (heartsText) heartsText.textContent = Math.max(0, currentExamLives);
+      }
+
+      if (sheet) {
+        sheet.className = 'duo-action-sheet sheet-wrong';
+        if (sheetIcon) sheetIcon.textContent = '❌';
+        if (sheetTitle) {
+          if (activeQuizMode === 'exam' && currentExamLives < 0) {
+            sheetTitle.textContent = 'Экзамен провален! Превышен лимит ошибок.';
+          } else {
+            sheetTitle.textContent = 'Неверно!';
+          }
+        }
+        if (sheetMsg) {
+          sheetMsg.innerHTML = `<b>Правильный ответ:</b> ${q.options[q.correctIndex]}<br><br>${q.explanation}`;
+          renderMath(sheetMsg);
+        }
+      }
     }
 
-    // Показать объяснение
-    const expBox = document.getElementById('quiz-explanation-box');
-    const expTitle = document.getElementById('quiz-exp-title');
-    const expText = document.getElementById('quiz-exp-text');
-    const expBtn = document.getElementById('btn-quiz-next');
+    saveState();
 
-    if (expBox && expTitle && expText && expBtn) {
-      expBox.style.display = 'block';
-      expTitle.textContent = isCorrect ? '✅ Правильно!' : '❌ Неверно!';
-      expTitle.style.color = isCorrect ? 'var(--accent-green)' : 'var(--accent-rose)';
-      expText.textContent = q.explanation;
-
-      const quizObj = data.quizzes.find(item => item.partId === currentQuizPartId);
-      const isLast = currentQuizStep >= quizObj.questions.length - 1;
-      expBtn.textContent = isLast ? 'Посмотреть результат 🏁' : 'Следующий вопрос →';
-      expBtn.onclick = () => {
+    // Настраиваем кнопку в нижней шторке Duolingo
+    const isLast = (currentQuizStep >= activeQuestions.length - 1) || (activeQuizMode === 'exam' && currentExamLives < 0);
+    if (sheetBtn) {
+      sheetBtn.textContent = isLast ? 'Посмотреть результаты 🏁' : 'Продолжить →';
+      sheetBtn.onclick = () => {
         if (isLast) {
           finishQuiz();
         } else {
@@ -816,42 +1021,88 @@
         }
       };
     }
+
+    if (sheet) sheet.style.display = 'block';
   }
 
   function finishQuiz() {
-    const quizObj = data.quizzes.find(q => q.partId === currentQuizPartId);
-    const total = quizObj.questions.length;
-    const pct = Math.round((currentQuizScore / total) * 100);
+    const total = activeQuestions.length;
+    const pct = total > 0 ? Math.round((currentQuizScore / total) * 100) : 0;
 
-    // Сохранить лучший рекорд
-    const oldBest = state.quizScores[currentQuizPartId];
-    if (!oldBest || pct > oldBest.pct) {
-      state.quizScores[currentQuizPartId] = { score: currentQuizScore, total, pct };
-      saveState();
+    // Если был режим темы, сохраняем лучший результат
+    if (activeQuizMode === 'topics') {
+      const oldBest = state.quizScores[currentQuizPartId];
+      if (!oldBest || pct > oldBest.pct) {
+        state.quizScores[currentQuizPartId] = { score: currentQuizScore, total, pct };
+        saveState();
+      }
     }
 
     const player = document.getElementById('quiz-player-container');
+    const sheet = document.getElementById('duo-sheet');
     const results = document.getElementById('quiz-result-container');
+
     if (player) player.style.display = 'none';
+    if (sheet) sheet.style.display = 'none';
     if (results) results.style.display = 'block';
 
     const scoreEl = document.getElementById('quiz-result-score');
     const pctEl = document.getElementById('quiz-result-pct');
     const badgeEl = document.getElementById('quiz-result-badge');
+    const titleEl = document.getElementById('quiz-result-title');
     const feedbackEl = document.getElementById('quiz-result-feedback');
+    const xpGainedEl = document.getElementById('quiz-xp-gained');
+    const starsEl = document.getElementById('quiz-stars-display');
+    const fixErrorsBtn = document.getElementById('btn-quiz-fix-errors');
 
     if (scoreEl) scoreEl.textContent = `${currentQuizScore} / ${total}`;
     if (pctEl) pctEl.textContent = `${pct}%`;
+    if (xpGainedEl) xpGainedEl.textContent = currentQuizXpGained;
 
-    if (pct >= 80) {
-      if (badgeEl) badgeEl.textContent = '🏆 Отлично!';
-      if (feedbackEl) feedbackEl.textContent = 'Превосходное знание темы! Вы готовы отвечать этот раздел на экзамене.';
-    } else if (pct >= 60) {
-      if (badgeEl) badgeEl.textContent = '👍 Хорошо!';
-      if (feedbackEl) feedbackEl.textContent = 'Неплохой результат, но есть пробелы. Рекомендуем повторить конспект и карточки.';
+    let starStr = '☆☆☆';
+    if (pct >= 90) starStr = '⭐⭐⭐';
+    else if (pct >= 70) starStr = '⭐⭐☆';
+    else if (pct >= 50) starStr = '⭐☆☆';
+    if (starsEl) starsEl.textContent = starStr;
+
+    if (activeQuizMode === 'exam') {
+      const passed = (currentExamLives >= 0) && (pct >= 70);
+      if (titleEl) titleEl.textContent = passed ? '🎉 Экзамен успешно сдан!' : '⚠️ Экзамен не сдан';
+      if (badgeEl) badgeEl.textContent = passed ? '🎓' : '❌';
+      if (feedbackEl) {
+        feedbackEl.textContent = passed
+          ? `Отличная работа! Допущено ошибок: ${2 - currentExamLives}. Вы полностью готовы к реальному экзамену на кафедре!`
+          : `К сожалению, лимит ошибок исчерпан (${2 - currentExamLives} ошибок). Рекомендуем потренировать сложные вопросы в «Работе над ошибками».`;
+      }
     } else {
-      if (badgeEl) badgeEl.textContent = '📚 Нужно повторить';
-      if (feedbackEl) feedbackEl.textContent = 'Рекомендуется еще раз внимательно прочитать конспект темы перед экзаменом.';
+      if (pct >= 85) {
+        if (titleEl) titleEl.textContent = 'Блестящая победа!';
+        if (badgeEl) badgeEl.textContent = '🏆';
+        if (feedbackEl) feedbackEl.textContent = 'Вы продемонстрировали великолепное знание физики и схемотехники!';
+      } else if (pct >= 65) {
+        if (titleEl) titleEl.textContent = 'Хороший результат!';
+        if (badgeEl) badgeEl.textContent = '👍';
+        if (feedbackEl) feedbackEl.textContent = 'Материал освоен, но есть мелкие неточности. Повторите ошибки для закрепления на 100%.';
+      } else {
+        if (titleEl) titleEl.textContent = 'Нужно потренироваться';
+        if (badgeEl) badgeEl.textContent = '📚';
+        if (feedbackEl) feedbackEl.textContent = 'Рекомендуется еще раз изучить конспект темы и повторить флеш-карты.';
+      }
+    }
+
+    if (fixErrorsBtn) {
+      fixErrorsBtn.style.display = state.mistakes.length > 0 ? 'inline-block' : 'none';
+      fixErrorsBtn.onclick = () => startTrainingMode('mistakes');
+    }
+
+    const retryBtn = document.getElementById('btn-quiz-retry');
+    if (retryBtn) {
+      retryBtn.onclick = () => startTrainingMode(activeQuizMode, currentQuizPartId);
+    }
+
+    const finishBtn = document.getElementById('btn-quiz-finish');
+    if (finishBtn) {
+      finishBtn.onclick = () => renderQuizSelector();
     }
   }
 

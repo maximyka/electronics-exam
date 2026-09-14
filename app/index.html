@@ -22,6 +22,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="app.css">
+  
+  <!-- KaTeX for beautiful offline math formulas -->
+  <link rel="stylesheet" href="katex/katex.min.css">
+  <script src="katex/katex.min.js"></script>
+  <script src="katex/auto-render.min.js"></script>
 </head>
 <body class="dark-theme">
   <div id="app-container">
@@ -35,6 +40,20 @@
             <h2>Электроника</h2>
             <span class="brand-sub">Экзамен 2026</span>
           </div>
+        </div>
+      <!-- Геймификация Duolingo / Хочу Водить -->
+      <div class="sidebar-gamification-bar">
+        <div class="stat-pill streak-pill" title="Серия занятий">
+          <span class="pill-icon">🔥</span>
+          <span id="sidebar-streak-count">1 дн.</span>
+        </div>
+        <div class="stat-pill xp-pill" title="Накопленный опыт">
+          <span class="pill-icon">⚡</span>
+          <span id="sidebar-xp-count">0 XP</span>
+        </div>
+        <div class="stat-pill mistakes-pill" id="sidebar-mistakes-pill" title="Ошибки для повторения" style="display:none;">
+          <span class="pill-icon">🛠️</span>
+          <span id="sidebar-mistakes-count">0</span>
         </div>
       </div>
       
@@ -72,8 +91,8 @@
         </button>
         <button class="nav-item" data-view="quiz">
           <span class="nav-icon">🎯</span>
-          <span class="nav-label">Тестирование</span>
-          <span class="nav-count">7 тем</span>
+          <span class="nav-label">Билеты и Тренажер</span>
+          <span class="nav-count" id="badge-quiz-total">124 билета</span>
         </button>
         <button class="nav-item" data-view="exam">
           <span class="nav-icon">🎓</span>
@@ -97,7 +116,7 @@
         </button>
         <div class="sidebar-version-badge" id="sidebar-version-badge">
           <span class="version-dot"></span>
-          <span id="app-version-tag">v1.1.0</span>
+          <span id="app-version-tag">v1.2.0</span>
           <button id="btn-check-updates" class="btn-icon-mini" title="Проверить обновления">🔄</button>
         </div>
       </div>
@@ -113,9 +132,10 @@
           <span class="mobile-header-title">Электроника</span>
         </div>
         <div class="mobile-header-right">
-          <div class="mobile-progress-pill" id="mobile-progress-pill">
-            <span class="pill-dot"></span>
-            <span id="mobile-pill-text">0% готово</span>
+          <div class="mobile-gamification-pills">
+            <span class="m-pill streak-pill">🔥 <span id="m-streak-val">1</span></span>
+            <span class="m-pill xp-pill">⚡ <span id="m-xp-val">0</span></span>
+            <span class="m-pill hearts-pill" id="m-hearts-pill" style="display:none;">❤️ <span id="m-hearts-val">5</span></span>
           </div>
           <button id="btn-mobile-theme" class="icon-button" aria-label="Смена темы">🌙</button>
           <button id="btn-mobile-install" class="icon-button install-btn" aria-label="Установить PWA">📲</button>
@@ -419,62 +439,164 @@
         </div>
       </section>
 
-      <!-- View 5: ТЕСТИРОВАНИЕ (Quiz) -->
+      <!-- View 5: ТРЕНАЖЕР БИЛЕТОВ (Duolingo & Хочу Водить стиль) -->
       <section id="view-quiz" class="app-view">
         <div class="view-inner quiz-inner">
-          <div class="quiz-header">
-            <div>
-              <h1>Тестирование и Квизы</h1>
-              <p class="section-desc">Проверьте готовность к экзамену по каждой части курса</p>
+          
+          <!-- Селектор режимов тренировки -->
+          <div id="quiz-hub-container">
+            <div class="quiz-hero-bar">
+              <div>
+                <h1 class="quiz-main-title">🎯 Экзаменационный тренажер</h1>
+                <p class="section-desc">124 билета с разбором, режим марафона и умная работа над ошибками</p>
+              </div>
+            </div>
+
+            <!-- Режимы в стиле «Хочу Водить» / Duolingo -->
+            <div class="training-modes-grid">
+              <div class="training-mode-card active-card" data-mode="topics">
+                <div class="mode-icon-circle bg-blue">🚦</div>
+                <div class="mode-content">
+                  <div class="mode-title-row">
+                    <h3>Билеты по темам</h3>
+                    <span class="mode-badge blue">7 частей</span>
+                  </div>
+                  <p class="mode-desc">Последовательное изучение тем курса от диодов до цифровых процессоров со звездами ⭐</p>
+                </div>
+              </div>
+
+              <div class="training-mode-card" data-mode="marathon">
+                <div class="mode-icon-circle bg-amber">🏎️</div>
+                <div class="mode-content">
+                  <div class="mode-title-row">
+                    <h3>Марафон нон-стоп</h3>
+                    <span class="mode-badge amber">124 вопроса</span>
+                  </div>
+                  <p class="mode-desc">Бесконечный поток вопросов подряд без остановки для максимального погружения</p>
+                </div>
+              </div>
+
+              <div class="training-mode-card" data-mode="mistakes" id="mode-card-mistakes">
+                <div class="mode-icon-circle bg-rose">🛠️</div>
+                <div class="mode-content">
+                  <div class="mode-title-row">
+                    <h3>Работа над ошибками</h3>
+                    <span class="mode-badge rose" id="badge-mistakes-counter">0 ошибок</span>
+                  </div>
+                  <p class="mode-desc">Вопросы, где вы ошиблись. Исчезают только после правильного ответа!</p>
+                </div>
+              </div>
+
+              <div class="training-mode-card" data-mode="exam">
+                <div class="mode-icon-circle bg-green">🏆</div>
+                <div class="mode-content">
+                  <div class="mode-title-row">
+                    <h3>Экзамен ГАИ / Сессия</h3>
+                    <span class="mode-badge green">20 билетов • 20 мин</span>
+                  </div>
+                  <p class="mode-desc">Строгий экзамен: 20 случайных вопросов, таймер, максимум 2 ошибки (❤️ 2 жизни)</p>
+                </div>
+              </div>
+
+              <div class="training-mode-card" data-mode="express">
+                <div class="mode-icon-circle bg-purple">⚡</div>
+                <div class="mode-content">
+                  <div class="mode-title-row">
+                    <h3>Экспресс 10</h3>
+                    <span class="mode-badge purple">2 минуты</span>
+                  </div>
+                  <p class="mode-desc">Быстрая разминка: 10 случайных вопросов для освежения знаний перед парой</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-divider-title">
+              <h3>Разделы экзамена (124 билета)</h3>
+            </div>
+
+            <!-- Список 7 тем -->
+            <div class="quiz-modules-selector" id="quiz-parts-selector">
+              <!-- Карточки 7 частей генерируются динамически -->
             </div>
           </div>
 
-          <!-- Выбор части для теста -->
-          <div class="quiz-modules-selector" id="quiz-parts-selector">
-            <!-- Динамически карточки 7 частей -->
-          </div>
-
-          <!-- Сам экран прохождения квиза -->
-          <div id="quiz-player-container" style="display:none;" class="quiz-player">
-            <div class="quiz-player-header">
-              <button id="btn-quiz-exit" class="back-btn">← Выбрать другую тему</button>
-              <div class="quiz-step-info">Вопрос <span id="quiz-step-num">1</span> из <span id="quiz-total-steps">5</span></div>
-            </div>
-
-            <div class="quiz-progress-line">
-              <div id="quiz-progress-fill" class="quiz-fill" style="width: 20%;"></div>
-            </div>
-
-            <div class="quiz-card">
-              <h2 id="quiz-question-text">Текст вопроса квиза...</h2>
+          <!-- Сам интерактивный плеер квиза (Duolingo Style) -->
+          <div id="quiz-player-container" style="display:none;" class="duo-player">
+            <!-- Верхняя планка прогресса -->
+            <div class="duo-top-bar">
+              <button id="btn-quiz-exit" class="duo-close-btn" aria-label="Выход">✕</button>
               
-              <div id="quiz-options-list" class="quiz-options-grid">
-                <!-- 4 варианта ответа -->
+              <div class="duo-progress-wrapper">
+                <div class="duo-progress-track">
+                  <div id="quiz-progress-fill" class="duo-progress-fill" style="width: 10%;"></div>
+                </div>
               </div>
 
-              <!-- Блок разбора ответа -->
-              <div id="quiz-explanation-box" class="explanation-box" style="display:none;">
-                <div class="exp-title" id="quiz-exp-title">Верно!</div>
-                <div class="exp-body" id="quiz-exp-text">Объяснение решения...</div>
-                <button id="btn-quiz-next" class="primary-btn exp-btn">Следующий вопрос →</button>
+              <div class="duo-live-stats">
+                <div class="duo-stat-badge" id="duo-step-counter">1 / 16</div>
+                <div class="duo-hearts-badge" id="duo-hearts-box" style="display:none;">
+                  <span class="heart-icon">❤️</span>
+                  <span id="duo-hearts-text">5</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Карточка вопроса -->
+            <div class="duo-card">
+              <div class="duo-topic-tag" id="quiz-topic-badge">Часть 1: Полупроводники</div>
+              <h2 id="quiz-question-text" class="duo-question-title">Текст вопроса квиза...</h2>
+              
+              <!-- Список 4 вариантов ответов -->
+              <div id="quiz-options-list" class="duo-options-grid">
+                <!-- 4 кнопки ответов генерируются с номерами 1, 2, 3, 4 -->
+              </div>
+            </div>
+
+            <!-- Всплывающая нижняя панель результата (Duolingo Sheet) -->
+            <div id="duo-sheet" class="duo-action-sheet" style="display:none;">
+              <div class="duo-sheet-inner">
+                <div class="duo-sheet-status">
+                  <div class="duo-status-icon" id="duo-sheet-icon">🎉</div>
+                  <div class="duo-status-text">
+                    <h3 id="duo-sheet-title">Великолепно!</h3>
+                    <div id="duo-sheet-msg" class="duo-sheet-explanation">Объяснение решения...</div>
+                  </div>
+                </div>
+                <button id="btn-quiz-next" class="duo-action-btn primary">Продолжить →</button>
               </div>
             </div>
           </div>
 
-          <!-- Экран результатов квиза -->
-          <div id="quiz-result-container" style="display:none;" class="quiz-results-card">
-            <div class="result-badge" id="quiz-result-badge">🏆 Отлично!</div>
-            <h2 id="quiz-result-title">Тест успешно завершен</h2>
-            <div class="result-score-circle">
-              <span id="quiz-result-score">5 / 5</span>
-              <span class="score-pct" id="quiz-result-pct">100%</span>
+          <!-- Экран триумфального завершения теста -->
+          <div id="quiz-result-container" style="display:none;" class="quiz-results-card duo-victory-card">
+            <div class="victory-icon-anim" id="quiz-result-badge">🏆</div>
+            <h2 id="quiz-result-title">Раздел успешно пройден!</h2>
+            <div class="victory-xp-pill">+<span id="quiz-xp-gained">160</span> XP получено! ⚡</div>
+            
+            <div class="victory-stats-row">
+              <div class="v-stat-card">
+                <span class="v-stat-num" id="quiz-result-score">15 / 16</span>
+                <span class="v-stat-lbl">Точность</span>
+              </div>
+              <div class="v-stat-card">
+                <span class="v-stat-num" id="quiz-result-pct">94%</span>
+                <span class="v-stat-lbl">Результат</span>
+              </div>
+              <div class="v-stat-card">
+                <span class="v-stat-num" id="quiz-stars-display">⭐⭐⭐</span>
+                <span class="v-stat-lbl">Награда</span>
+              </div>
             </div>
-            <p id="quiz-result-feedback">Великолепный результат! Вы отлично усвоили этот раздел курса.</p>
+
+            <p id="quiz-result-feedback">Великолепный результат! Материал усвоен на оценку «Отлично».</p>
+            
             <div class="result-actions">
-              <button id="btn-quiz-retry" class="secondary-btn">Пройти еще раз</button>
-              <button id="btn-quiz-finish" class="primary-btn">К списку тестов</button>
+              <button id="btn-quiz-fix-errors" class="duo-action-btn secondary" style="display:none;">🛠️ Повторить ошибки</button>
+              <button id="btn-quiz-retry" class="duo-action-btn secondary">Пройти еще раз</button>
+              <button id="btn-quiz-finish" class="duo-action-btn primary">К списку билетов →</button>
             </div>
           </div>
+
         </div>
       </section>
 
