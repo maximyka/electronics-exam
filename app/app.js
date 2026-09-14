@@ -6,7 +6,7 @@
 (function() {
   'use strict';
 
-  const CURRENT_APP_VERSION = '1.4.0';
+  const CURRENT_APP_VERSION = '1.5.0';
   let swRegistration = null;
 
   // Регистрация Service Worker для PWA с поддержкой мгновенных обновлений
@@ -735,8 +735,14 @@
     const totalCountEl = document.getElementById('fc-total-count');
     const progressFillEl = document.getElementById('fc-progress-fill');
 
-    if (frontEl) frontEl.textContent = card.front;
-    if (backEl) backEl.textContent = card.back;
+    if (frontEl) {
+      frontEl.innerHTML = (card.front || '').replace(/\n/g, '<br>');
+      renderMath(frontEl);
+    }
+    if (backEl) {
+      backEl.innerHTML = (card.back || '').replace(/\n/g, '<br>');
+      renderMath(backEl);
+    }
     if (currentIdxEl) currentIdxEl.textContent = activeFlashcardIndex + 1;
     if (totalCountEl) totalCountEl.textContent = activeFlashcardDeck.length;
 
@@ -750,6 +756,10 @@
     isCardFlipped = !isCardFlipped;
     const cardEl = document.getElementById('active-flashcard');
     if (cardEl) cardEl.classList.toggle('flipped', isCardFlipped);
+    if (isCardFlipped) {
+      const backEl = document.getElementById('fc-back-text');
+      if (backEl) renderMath(backEl);
+    }
   }
 
   function rateFlashcard(rating) {
