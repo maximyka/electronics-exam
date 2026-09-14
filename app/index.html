@@ -79,9 +79,14 @@
           <span class="nav-label">Обзор и прогресс</span>
           <span class="nav-badge" id="badge-total-pct">0%</span>
         </button>
+        <button class="nav-item" data-view="course">
+          <span class="nav-icon">🎓</span>
+          <span class="nav-label">Курс лекций</span>
+          <span class="nav-badge highlight" id="badge-course-count">14 тем</span>
+        </button>
         <button class="nav-item" data-view="catalog">
-          <span class="nav-icon">📚</span>
-          <span class="nav-label">36 Вопросов</span>
+          <span class="nav-icon">📝</span>
+          <span class="nav-label">36 Билетов</span>
           <span class="nav-count">36</span>
         </button>
         <button class="nav-item" data-view="glossary">
@@ -126,7 +131,7 @@
         </button>
         <div class="sidebar-version-badge" id="sidebar-version-badge">
           <span class="version-dot"></span>
-          <span id="app-version-tag">v1.3.0</span>
+          <span id="app-version-tag">v1.4.0</span>
           <button id="btn-check-updates" class="btn-icon-mini" title="Проверить обновления">🔄</button>
         </div>
       </div>
@@ -155,7 +160,28 @@
       <!-- View 1: ДАШБОРД (Dashboard) -->
       <section id="view-dashboard" class="app-view active">
         <div class="view-inner">
-          <div class="dashboard-hero">
+                  <!-- Баннер глубокого семестрового курса -->
+        <div class="course-hero-banner" id="course-hero-banner">
+          <div class="course-hero-badge">🎓 Семестровая программа (14 лекций)</div>
+          <h2 class="course-hero-title">Академический курс: Электроника и схемотехника</h2>
+          <p class="course-hero-desc">Изучайте курс последовательно и фундаментально — 14 подробнейших университетских лекций от физики p-n перехода до ЦОС и микросхем памяти с выводами формул, схемами, лабораторными и расчетными задачами.</p>
+          <div class="course-hero-meta-row">
+            <div class="hero-stat-pill">
+              <span class="hero-stat-icon">📚</span>
+              <span class="hero-stat-text" id="dash-course-lectures-status">14 лекций курса</span>
+            </div>
+            <div class="hero-stat-pill">
+              <span class="hero-stat-icon">⚡</span>
+              <span class="hero-stat-text" id="dash-course-xp-val">+50 XP за лекцию</span>
+            </div>
+          </div>
+          <div class="course-hero-actions">
+            <button class="btn btn-primary" id="btn-dash-open-course">📖 Открыть полный курс лекций</button>
+            <button class="btn btn-secondary" id="btn-dash-open-catalog">📝 36 Билетов к экзамену</button>
+          </div>
+        </div>
+
+        <div class="dashboard-hero">
             <div class="hero-text">
               <h1>Подготовка к экзамену</h1>
               <p class="hero-desc">Полный курс по «Электронике и схемотехнике»: 7 модулей, 36 вопросов, конспекты с формулами и схемами.</p>
@@ -248,6 +274,52 @@
       </section>
 
       <!-- View 2: КАТАЛОГ 36 ВОПРОСОВ (Catalog) -->
+            <!-- ======================================================================
+           ЭКРАН: ПОЛНЫЙ АКАДЕМИЧЕСКИЙ КУРС (14 ЛЕКЦИЙ)
+           ====================================================================== -->
+      <section id="view-course" class="app-view">
+        <div class="view-inner course-view-inner">
+          <div class="course-header-banner">
+            <div class="course-header-badge">🎓 Семестровая университетская программа</div>
+            <h1 class="course-header-title">Полный курс: Электроника и схемотехника</h1>
+            <p class="course-header-desc">Комплексный электронный учебник для глубокого освоения всей дисциплины. Каждая лекция подробно разбирает физику процессов, математические выводы, схемотехнику, практическое применение, лабораторные работы и вопросы самоконтроля.</p>
+            
+            <div class="course-progress-panel">
+              <div class="course-progress-top">
+                <span class="progress-lbl">Прогресс освоения семестрового курса:</span>
+                <span class="progress-pct-val" id="course-progress-text">0 из 14 лекций освоено (0%)</span>
+              </div>
+              <div class="course-progress-bar-bg">
+                <div class="course-progress-bar-fill" id="course-progress-bar-fill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Фильтры по модулям курса -->
+            <div class="course-filter-bar">
+              <div class="filter-chips-scroll" id="course-filter-chips">
+                <button class="filter-chip active" data-mod="all">Все 14 лекций</button>
+                <button class="filter-chip" data-mod="1">⚡ 1. Полупроводники и диоды</button>
+                <button class="filter-chip" data-mod="2">🎛 2. Транзисторы и тиристоры</button>
+                <button class="filter-chip" data-mod="3">🔊 3. Усилители, ОУ и фильтры</button>
+                <button class="filter-chip" data-mod="4">📡 4. Генераторы и модуляция</button>
+                <button class="filter-chip" data-mod="5">🔋 5. Питание, ЦАП и АЦП</button>
+                <button class="filter-chip" data-mod="6">💾 6. Комбинационная логика</button>
+                <button class="filter-chip" data-mod="7">⏱ 7. Триггеры, память и фильтры</button>
+              </div>
+              
+              <div class="course-search-box">
+                <input type="text" id="course-search-input" placeholder="🔍 Поиск по темам, формулам и терминам курса...">
+              </div>
+            </div>
+          </div>
+
+          <!-- Сетка лекций курса -->
+          <div class="course-lectures-grid" id="course-lectures-grid">
+            <!-- Заполняется функцией renderCourseView() -->
+          </div>
+        </div>
+      </section>
+
       <section id="view-catalog" class="app-view">
         <div class="view-inner">
           <div class="catalog-header">
@@ -289,6 +361,18 @@
               <button id="btn-read-aloud" class="icon-btn-pill" title="Озвучить конспект">🔊 Голос</button>
               <button id="btn-share-question" class="icon-btn-pill" title="Поделиться">↗️</button>
             </div>
+          </div>
+
+          <!-- Переключатель режима: Билет экзамена vs Полная лекция -->
+          <div class="detail-mode-tabs-bar" id="detail-mode-tabs-bar">
+            <button class="detail-mode-tab-btn active" id="tab-btn-detail-ticket" data-pane="ticket">
+              <span class="tab-btn-icon">⚡</span>
+              <span class="tab-btn-text">Билет к экзамену (Краткий конспект)</span>
+            </button>
+            <button class="detail-mode-tab-btn" id="tab-btn-detail-lecture" data-pane="lecture">
+              <span class="tab-btn-icon">🎓</span>
+              <span class="tab-btn-text" id="tab-btn-lecture-lbl">Полная университетская лекция</span>
+            </button>
           </div>
 
           <!-- Заголовок вопроса -->
@@ -832,9 +916,13 @@
         <span class="tabbar-icon">📊</span>
         <span class="tabbar-label">Обзор</span>
       </button>
+      <button class="tabbar-item" data-view="course">
+        <span class="tabbar-icon">🎓</span>
+        <span class="tabbar-label">Курс</span>
+      </button>
       <button class="tabbar-item" data-view="catalog">
-        <span class="tabbar-icon">📚</span>
-        <span class="tabbar-label">Темы</span>
+        <span class="tabbar-icon">📝</span>
+        <span class="tabbar-label">Билеты</span>
       </button>
       <button class="tabbar-item" data-view="glossary">
         <span class="tabbar-icon">📖</span>
@@ -853,6 +941,59 @@
         <span class="tabbar-label">Экзамен</span>
       </button>
     </nav>
+
+        <!-- ======================================================================
+         ПОЛНОЭКРАННЫЙ РИДЕР ЛЕКЦИИ (Textbook Reader)
+         ====================================================================== -->
+    <div id="lecture-reader-modal" class="lecture-reader-backdrop" style="display:none;">
+      <div class="lecture-reader-container">
+        <!-- Верхний бар ридера -->
+        <header class="reader-header">
+          <button id="btn-close-reader" class="reader-btn-back">← К списку лекций</button>
+          <div class="reader-header-meta">
+            <span id="reader-lecture-badge" class="reader-badge">Лекция 1</span>
+            <h2 id="reader-header-title" class="reader-header-title">Название лекции</h2>
+          </div>
+          <div class="reader-header-actions">
+            <button id="btn-reader-toggle-mastered" class="btn-master-status">
+              <span class="btn-icon">✓</span>
+              <span class="btn-text">Отметить как освоенную (+50 XP)</span>
+            </button>
+            <button id="btn-reader-close-x" class="reader-close-btn" title="Закрыть">✕</button>
+          </div>
+        </header>
+
+        <!-- Тело ридера -->
+        <div class="reader-body">
+          <!-- Боковое оглавление лекции -->
+          <aside class="reader-toc-sidebar" id="reader-toc-sidebar">
+            <div class="toc-title">📑 Содержание лекции</div>
+            <nav class="toc-nav" id="reader-toc-nav">
+              <!-- Ссылки на секции -->
+            </nav>
+            <div class="toc-quick-links">
+              <div class="toc-links-title">Связанные материалы:</div>
+              <div id="reader-related-links">
+                <!-- Ссылки -->
+              </div>
+            </div>
+          </aside>
+
+          <!-- Основное полотно лекции -->
+          <main class="reader-content-pane" id="reader-content-pane">
+            <div class="reader-article" id="reader-article">
+              <!-- Контент лекции -->
+            </div>
+
+            <!-- Нижняя навигация между лекциями -->
+            <div class="reader-bottom-nav">
+              <button id="btn-reader-prev" class="reader-nav-btn prev">← Предыдущая лекция</button>
+              <button id="btn-reader-next" class="reader-nav-btn next">Следующая лекция →</button>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
 
     <!-- Модальное окно установки PWA на iPhone / Mac -->
     <div id="install-modal" class="modal-backdrop" style="display:none;">
