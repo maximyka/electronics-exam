@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>Электроника и Схемотехника — Подготовка к экзамену</title>
+  
+  <!-- PWA & Apple iOS Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Электроника">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="Курс подготовки к экзамену по электронике и схемотехнике: 36 вопросов, 7 частей, конспекты, карточки, тесты, симулятор экзамена">
+  
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="dark-theme">
+  <div id="app-container">
+    
+    <!-- Сайдбар для Mac (Desktop) -->
+    <aside id="desktop-sidebar">
+      <div class="sidebar-header">
+        <div class="app-brand">
+          <img src="icon-192.png" alt="Logo" class="brand-logo">
+          <div class="brand-text">
+            <h2>Электроника</h2>
+            <span class="brand-sub">Экзамен 2026</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Прогресс в сайдбаре -->
+      <div class="sidebar-progress-card">
+        <div class="progress-ring-container">
+          <svg class="progress-ring" width="64" height="64">
+            <circle class="progress-ring__bg" stroke="rgba(255,255,255,0.1)" stroke-width="6" fill="transparent" r="26" cx="32" cy="32"/>
+            <circle id="sidebar-progress-circle" class="progress-ring__circle" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" fill="transparent" r="26" cx="32" cy="32"/>
+          </svg>
+          <div class="progress-ring__text" id="sidebar-progress-text">0%</div>
+        </div>
+        <div class="sidebar-progress-meta">
+          <div class="meta-title">Готовность</div>
+          <div class="meta-sub" id="sidebar-learned-count">0 из 36 тем</div>
+        </div>
+      </div>
+
+      <!-- Навигация сайдбара -->
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Дашборд</span>
+          <span class="nav-badge" id="badge-total-pct">0%</span>
+        </button>
+        <button class="nav-item" data-view="catalog">
+          <span class="nav-icon">📚</span>
+          <span class="nav-label">36 Вопросов</span>
+          <span class="nav-count">36</span>
+        </button>
+        <button class="nav-item" data-view="flashcards">
+          <span class="nav-icon">🃏</span>
+          <span class="nav-label">Карточки</span>
+          <span class="nav-count" id="badge-fc-count">52</span>
+        </button>
+        <button class="nav-item" data-view="quiz">
+          <span class="nav-icon">🎯</span>
+          <span class="nav-label">Тестирование</span>
+          <span class="nav-count">7 тем</span>
+        </button>
+        <button class="nav-item" data-view="exam">
+          <span class="nav-icon">🎓</span>
+          <span class="nav-label">Симулятор экзамена</span>
+          <span class="nav-indicator">Live</span>
+        </button>
+        <button class="nav-item" data-view="cheatsheet">
+          <span class="nav-icon">⚡</span>
+          <span class="nav-label">Шпаргалка</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="btn-theme-toggle" class="sidebar-action-btn" title="Сменить тему">
+          <span class="theme-icon">🌙</span>
+          <span class="action-text">Темная тема</span>
+        </button>
+        <button id="btn-install-pwa" class="sidebar-action-btn highlight" style="display:none;">
+          <span>📲</span>
+          <span>Установить в Dock</span>
+        </button>
+        <div class="sidebar-version-badge" id="sidebar-version-badge">
+          <span class="version-dot"></span>
+          <span id="app-version-tag">v1.1.0</span>
+          <button id="btn-check-updates" class="btn-icon-mini" title="Проверить обновления">🔄</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Основной контентный блок -->
+    <main id="main-content">
+      
+      <!-- Мобильный заголовок (для iPhone) -->
+      <header id="mobile-header">
+        <div class="mobile-header-left">
+          <img src="icon-192.png" alt="Icon" class="mobile-app-icon">
+          <span class="mobile-header-title">Электроника</span>
+        </div>
+        <div class="mobile-header-right">
+          <div class="mobile-progress-pill" id="mobile-progress-pill">
+            <span class="pill-dot"></span>
+            <span id="mobile-pill-text">0% готово</span>
+          </div>
+          <button id="btn-mobile-theme" class="icon-button" aria-label="Смена темы">🌙</button>
+          <button id="btn-mobile-install" class="icon-button install-btn" aria-label="Установить PWA">📲</button>
+        </div>
+      </header>
+
+      <!-- View 1: ДАШБОРД (Dashboard) -->
+      <section id="view-dashboard" class="app-view active">
+        <div class="view-inner">
+          <div class="dashboard-hero">
+            <div class="hero-text">
+              <h1>Подготовка к экзамену</h1>
+              <p class="hero-desc">Полный курс по «Электронике и схемотехнике»: 7 модулей, 36 вопросов, конспекты с формулами и схемами.</p>
+            </div>
+            
+            <!-- Главный круг прогресса -->
+            <div class="big-progress-card">
+              <div class="big-ring-wrapper">
+                <svg class="big-ring" width="130" height="130">
+                  <circle class="ring-bg" stroke="rgba(255,255,255,0.08)" stroke-width="10" fill="transparent" r="54" cx="65" cy="65"/>
+                  <circle id="hero-progress-circle" class="ring-fg" stroke="url(#heroGrad)" stroke-width="10" stroke-linecap="round" fill="transparent" r="54" cx="65" cy="65"/>
+                  <defs>
+                    <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#38bdf8"/>
+                      <stop offset="100%" stop-color="#3b82f6"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div class="big-ring-content">
+                  <span id="hero-progress-pct" class="ring-val">0%</span>
+                  <span class="ring-sub">Готовность</span>
+                </div>
+              </div>
+              <div class="stats-grid">
+                <div class="stat-pill success">
+                  <span class="pill-num" id="stat-learned">0</span>
+                  <span class="pill-name">Выучено</span>
+                </div>
+                <div class="stat-pill warning">
+                  <span class="pill-num" id="stat-repeat">0</span>
+                  <span class="pill-name">Повторить</span>
+                </div>
+                <div class="stat-pill progress">
+                  <span class="pill-num" id="stat-learning">0</span>
+                  <span class="pill-name">В процессе</span>
+                </div>
+                <div class="stat-pill neutral">
+                  <span class="pill-num" id="stat-untouched">36</span>
+                  <span class="pill-name">Не начато</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Умная рекомендация: что учить дальше -->
+          <div id="smart-recommendation-card" class="smart-card">
+            <div class="smart-card-badge">🎯 Рекомендуем изучить сейчас</div>
+            <div class="smart-card-body">
+              <h3 id="rec-question-title">Загрузка темы...</h3>
+              <p id="rec-question-desc">Описание темы...</p>
+              <button id="btn-open-recommended" class="primary-btn">Начать изучение →</button>
+            </div>
+          </div>
+
+          <!-- Быстрые действия -->
+          <div class="quick-actions-row">
+            <button class="action-card" data-action="cards">
+              <div class="action-card-icon">🃏</div>
+              <div class="action-card-info">
+                <h4>Флеш-карточки</h4>
+                <p>Тренировка памяти (52 карточки)</p>
+              </div>
+            </button>
+            <button class="action-card" data-action="quiz">
+              <div class="action-card-icon">🎯</div>
+              <div class="action-card-info">
+                <h4>Пройти квиз</h4>
+                <p>Проверка знаний по частям</p>
+              </div>
+            </button>
+            <button class="action-card highlight-exam" data-action="exam">
+              <div class="action-card-icon">🎓</div>
+              <div class="action-card-info">
+                <h4>Сдать экзамен</h4>
+                <p>Случайный билет с таймером</p>
+              </div>
+            </button>
+          </div>
+
+          <!-- Модули курса (7 частей) -->
+          <div class="section-title-bar">
+            <h2>Части курса и проценты освоения</h2>
+            <span class="section-badge">7 модулей</span>
+          </div>
+
+          <div class="modules-grid" id="dashboard-modules-grid">
+            <!-- Генерируется из exam_data.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- View 2: КАТАЛОГ 36 ВОПРОСОВ (Catalog) -->
+      <section id="view-catalog" class="app-view">
+        <div class="view-inner">
+          <div class="catalog-header">
+            <div>
+              <h1>Экзаменационные вопросы</h1>
+              <p class="section-desc">Полный список из 36 тем программы с фильтрацией по статусу и поиском</p>
+            </div>
+            <div class="search-box-wrapper">
+              <input type="text" id="catalog-search-input" placeholder="🔍 Поиск по названию, формуле, теме...">
+              <button id="catalog-search-clear" class="clear-btn" style="display:none;">✕</button>
+            </div>
+          </div>
+
+          <!-- Фильтры статуса -->
+          <div class="filters-scroll">
+            <button class="filter-chip active" data-filter="all">Все (36)</button>
+            <button class="filter-chip" data-filter="learned">✅ Выучено (<span id="filter-count-learned">0</span>)</button>
+            <button class="filter-chip" data-filter="learning">⏳ В процессе (<span id="filter-count-learning">0</span>)</button>
+            <button class="filter-chip" data-filter="repeat">🔄 Повторить (<span id="filter-count-repeat">0</span>)</button>
+            <button class="filter-chip" data-filter="untouched">⚪️ Не начато (<span id="filter-count-untouched">36</span>)</button>
+            <button class="filter-chip" data-filter="favorites">⭐️ Избранное (<span id="filter-count-fav">0</span>)</button>
+          </div>
+
+          <!-- Список вопросов по частям -->
+          <div id="catalog-questions-container" class="questions-accordion-list">
+            <!-- Динамически заполняется -->
+          </div>
+        </div>
+      </section>
+
+      <!-- View 3: ДЕТАЛЬНЫЙ КОНСПЕКТ ВОПРОСА (Question Detail) -->
+      <section id="view-detail" class="app-view">
+        <div class="view-inner detail-view-inner">
+          <!-- Верхняя панель конспекта -->
+          <div class="detail-top-nav">
+            <button id="btn-detail-back" class="back-btn">← Назад к списку</button>
+            <div class="detail-top-actions">
+              <button id="btn-toggle-favorite" class="icon-btn-pill" title="В избранное">⭐️</button>
+              <button id="btn-read-aloud" class="icon-btn-pill" title="Озвучить конспект">🔊 Голос</button>
+              <button id="btn-share-question" class="icon-btn-pill" title="Поделиться">↗️</button>
+            </div>
+          </div>
+
+          <!-- Заголовок вопроса -->
+          <div class="detail-header-card">
+            <div class="question-meta-row">
+              <span id="detail-part-badge" class="badge-part">Часть 1</span>
+              <span id="detail-qnum-badge" class="badge-num">Вопрос №1</span>
+            </div>
+            <h1 id="detail-title">Название вопроса</h1>
+            <p id="detail-full-question" class="full-q-text">Полная формулировка из программы</p>
+            
+            <div class="detail-tags-row" id="detail-tags-container">
+              <!-- Теги -->
+            </div>
+
+            <!-- Статус вопроса (Выучил / Учу / Повторить) -->
+            <div class="detail-status-selector">
+              <span class="status-label">Ваш статус по вопросу:</span>
+              <div class="status-buttons-group">
+                <button class="status-btn" data-status="untouched">⚪️ Не начато</button>
+                <button class="status-btn" data-status="learning">⏳ В процессе</button>
+                <button class="status-btn" data-status="repeat">🔄 Повторить</button>
+                <button class="status-btn" data-status="learned">✅ Выучено!</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SVG-схема вопроса -->
+          <div class="detail-card diagram-card" id="detail-diagram-wrapper">
+            <div class="card-title-bar">
+              <h3>📐 Наглядная схема и график</h3>
+              <span class="card-title-sub">Векторная схема по материалам лекций</span>
+            </div>
+            <div id="detail-svg-container" class="svg-viewport">
+              <!-- SVG диаграмма -->
+            </div>
+          </div>
+
+          <!-- Формулы вопроса -->
+          <div class="detail-card formulas-card" id="detail-formulas-wrapper">
+            <div class="card-title-bar">
+              <h3>🧮 Ключевые формулы и параметры</h3>
+              <span class="card-title-sub">Обязательно знать для ответа</span>
+            </div>
+            <div id="detail-formulas-list" class="formulas-list">
+              <!-- Список формул -->
+            </div>
+          </div>
+
+          <!-- Текст конспекта -->
+          <div class="detail-card content-card">
+            <div class="card-title-bar">
+              <h3>📖 Полный конспект без «воды»</h3>
+              <span class="card-title-sub">Четкий структурированный ответ на отлично</span>
+            </div>
+            <div id="detail-summary-content" class="summary-body typography">
+              <!-- Конспект -->
+            </div>
+          </div>
+
+          <!-- Подводные камни экзаменатора -->
+          <div class="detail-card traps-card">
+            <div class="card-title-bar">
+              <h3>🎯 Вопросы с подвохом от преподавателя</h3>
+              <span class="card-title-sub">Типичные дополнительные вопросы на засыпку</span>
+            </div>
+            <ul id="detail-traps-list" class="traps-list">
+              <!-- Ловушки -->
+            </ul>
+          </div>
+
+          <!-- Чеклист самопроверки -->
+          <div class="detail-card checklist-card">
+            <div class="card-title-bar">
+              <h3>☑️ Чек-лист для самопроверки</h3>
+              <span class="card-title-sub">Отметьте, что можете рассказать без подглядывания</span>
+            </div>
+            <div id="detail-checklist-container" class="checklist-items">
+              <!-- Чекбоксы -->
+            </div>
+          </div>
+
+          <!-- Навигация След/Пред -->
+          <div class="detail-bottom-nav">
+            <button id="btn-prev-question" class="nav-step-btn">← Предыдущий вопрос</button>
+            <button id="btn-next-question" class="nav-step-btn primary">Следующий вопрос →</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 4: КАРТОЧКИ (Flashcards) -->
+      <section id="view-flashcards" class="app-view">
+        <div class="view-inner flashcards-inner">
+          <div class="fc-header">
+            <div>
+              <h1>Флеш-карточки</h1>
+              <p class="section-desc">Интервальное повторение определений, формул и схем</p>
+            </div>
+            
+            <div class="fc-part-select-wrapper">
+              <label for="fc-part-filter">Тема:</label>
+              <select id="fc-part-filter">
+                <option value="all">Все темы (52 карточки)</option>
+                <option value="1">Часть 1. Диоды (8)</option>
+                <option value="2">Часть 2. Транзисторы (9)</option>
+                <option value="3">Часть 3. Усилители (9)</option>
+                <option value="4">Часть 4. Генераторы (6)</option>
+                <option value="5">Часть 5. ЦАП и АЦП (6)</option>
+                <option value="6">Часть 6. Логика (6)</option>
+                <option value="7">Часть 7. Память и ЖКИ (8)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Индикатор колоды -->
+          <div class="fc-deck-status">
+            <div class="deck-counter">Карточка <span id="fc-current-idx">1</span> из <span id="fc-total-count">52</span></div>
+            <div class="deck-progress-bar">
+              <div id="fc-progress-fill" class="deck-fill" style="width: 2%;"></div>
+            </div>
+          </div>
+
+          <!-- Сама 3D-карточка -->
+          <div class="fc-stage">
+            <div id="active-flashcard" class="flashcard-card" tabindex="0">
+              <div class="card-face card-front">
+                <div class="card-top-tag">ВОПРОС / ТЕРМИН</div>
+                <div class="card-main-text" id="fc-front-text">Вопрос...</div>
+                <div class="card-hint">Нажмите для переворота (или Пробел) 🔄</div>
+              </div>
+              <div class="card-face card-back">
+                <div class="card-top-tag answer">ОТВЕТ / СУТЬ</div>
+                <div class="card-main-text answer-text" id="fc-back-text">Ответ...</div>
+                <div class="card-hint">Оцените свои знания ниже 👇</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Кнопки оценки -->
+          <div class="fc-actions-row">
+            <button class="fc-btn bad" id="btn-fc-bad" title="Клавиша 1">
+              <span class="btn-emoji">❌</span>
+              <span class="btn-lbl">Не знаю</span>
+            </button>
+            <button class="fc-btn ok" id="btn-fc-ok" title="Клавиша 2">
+              <span class="btn-emoji">🤔</span>
+              <span class="btn-lbl">Сомневаюсь</span>
+            </button>
+            <button class="fc-btn good" id="btn-fc-good" title="Клавиша 3">
+              <span class="btn-emoji">✅</span>
+              <span class="btn-lbl">Знаю!</span>
+            </button>
+          </div>
+
+          <div class="fc-shortcuts-hint">
+            Горячие клавиши: <b>Пробел</b> — перевернуть, <b>← / →</b> — навигация, <b>1, 2, 3</b> — оценка
+          </div>
+        </div>
+      </section>
+
+      <!-- View 5: ТЕСТИРОВАНИЕ (Quiz) -->
+      <section id="view-quiz" class="app-view">
+        <div class="view-inner quiz-inner">
+          <div class="quiz-header">
+            <div>
+              <h1>Тестирование и Квизы</h1>
+              <p class="section-desc">Проверьте готовность к экзамену по каждой части курса</p>
+            </div>
+          </div>
+
+          <!-- Выбор части для теста -->
+          <div class="quiz-modules-selector" id="quiz-parts-selector">
+            <!-- Динамически карточки 7 частей -->
+          </div>
+
+          <!-- Сам экран прохождения квиза -->
+          <div id="quiz-player-container" style="display:none;" class="quiz-player">
+            <div class="quiz-player-header">
+              <button id="btn-quiz-exit" class="back-btn">← Выбрать другую тему</button>
+              <div class="quiz-step-info">Вопрос <span id="quiz-step-num">1</span> из <span id="quiz-total-steps">5</span></div>
+            </div>
+
+            <div class="quiz-progress-line">
+              <div id="quiz-progress-fill" class="quiz-fill" style="width: 20%;"></div>
+            </div>
+
+            <div class="quiz-card">
+              <h2 id="quiz-question-text">Текст вопроса квиза...</h2>
+              
+              <div id="quiz-options-list" class="quiz-options-grid">
+                <!-- 4 варианта ответа -->
+              </div>
+
+              <!-- Блок разбора ответа -->
+              <div id="quiz-explanation-box" class="explanation-box" style="display:none;">
+                <div class="exp-title" id="quiz-exp-title">Верно!</div>
+                <div class="exp-body" id="quiz-exp-text">Объяснение решения...</div>
+                <button id="btn-quiz-next" class="primary-btn exp-btn">Следующий вопрос →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Экран результатов квиза -->
+          <div id="quiz-result-container" style="display:none;" class="quiz-results-card">
+            <div class="result-badge" id="quiz-result-badge">🏆 Отлично!</div>
+            <h2 id="quiz-result-title">Тест успешно завершен</h2>
+            <div class="result-score-circle">
+              <span id="quiz-result-score">5 / 5</span>
+              <span class="score-pct" id="quiz-result-pct">100%</span>
+            </div>
+            <p id="quiz-result-feedback">Великолепный результат! Вы отлично усвоили этот раздел курса.</p>
+            <div class="result-actions">
+              <button id="btn-quiz-retry" class="secondary-btn">Пройти еще раз</button>
+              <button id="btn-quiz-finish" class="primary-btn">К списку тестов</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 6: СИМУЛЯТОР ЭКЗАМЕНА (Exam Simulator) -->
+      <section id="view-exam" class="app-view">
+        <div class="view-inner exam-sim-inner">
+          <div class="exam-header">
+            <div>
+              <h1>Симулятор экзамена</h1>
+              <p class="section-desc">Генерация реального экзаменационного билета (2 теоретических вопроса + 1 расчетно-практическая задача) с таймером подготовки</p>
+            </div>
+            <button id="btn-generate-ticket" class="primary-btn pulse-glow">🎲 Новый билет</button>
+          </div>
+
+          <!-- Панель таймера -->
+          <div class="exam-timer-card">
+            <div class="timer-display-group">
+              <span class="timer-icon">⏱️</span>
+              <div class="timer-digits" id="exam-timer-digits">20:00</div>
+              <span class="timer-label">времени на подготовку</span>
+            </div>
+            <div class="timer-controls">
+              <button id="btn-timer-toggle" class="timer-btn">Пауза</button>
+              <button id="btn-timer-reset" class="timer-btn secondary">Сброс (20 мин)</button>
+            </div>
+          </div>
+
+          <!-- Карточка билета -->
+          <div id="exam-ticket-card" class="ticket-card">
+            <div class="ticket-top">
+              <span class="ticket-badge" id="ticket-number-badge">Билет №1</span>
+              <span class="ticket-inst">Курс: Электроника и схемотехника</span>
+            </div>
+
+            <!-- Вопрос 1 -->
+            <div class="ticket-question-block">
+              <div class="tq-label">1. Теоретический вопрос:</div>
+              <h3 id="ticket-q1-title">Вопрос 1...</h3>
+              <button class="hint-btn" data-target="q1">📖 Посмотреть конспект к вопросу</button>
+            </div>
+
+            <!-- Вопрос 2 -->
+            <div class="ticket-question-block">
+              <div class="tq-label">2. Теоретический вопрос:</div>
+              <h3 id="ticket-q2-title">Вопрос 2...</h3>
+              <button class="hint-btn" data-target="q2">📖 Посмотреть конспект к вопросу</button>
+            </div>
+
+            <!-- Практическая задача -->
+            <div class="ticket-question-block practical">
+              <div class="tq-label practical">3. Практическая схема / задача:</div>
+              <h3 id="ticket-q3-task">Текст задачи...</h3>
+              <button id="btn-reveal-solution" class="secondary-btn small-btn">Показать решение и ответ</button>
+              <div id="ticket-solution-box" class="solution-box" style="display:none;">
+                <strong>Решение:</strong>
+                <p id="ticket-solution-text">...</p>
+              </div>
+            </div>
+
+            <!-- Самооценка сдачи -->
+            <div class="exam-evaluation-block">
+              <h4>Самооценка ответа преподавателю:</h4>
+              <p>Как вы ответили на вопросы билета?</p>
+              <div class="grades-row">
+                <button class="grade-btn g2" data-grade="2">2 (Неуд)</button>
+                <button class="grade-btn g3" data-grade="3">3 (Удовл)</button>
+                <button class="grade-btn g4" data-grade="4">4 (Хорошо)</button>
+                <button class="grade-btn g5" data-grade="5">5 (Отлично!)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- История симуляций -->
+          <div class="exam-history-card">
+            <h3>История пробных сдач</h3>
+            <div id="exam-history-list" class="history-list">
+              <div class="empty-hint">Вы еще не сдали ни одного пробного билета. Нажмите «Новый билет» и проверьте себя!</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 7: ШПАРГАЛКА (Cheatsheet) -->
+      <section id="view-cheatsheet" class="app-view">
+        <div class="view-inner cheatsheet-inner">
+          <div class="cheatsheet-header">
+            <div>
+              <h1>Экспресс-шпаргалка</h1>
+              <p class="section-desc">Краткая сводка формул, определений и схем для быстрого повторения прямо перед аудиторией</p>
+            </div>
+            <div class="search-box-wrapper">
+              <input type="text" id="cheat-search-input" placeholder="⚡ Мгновенный поиск формулы или термина...">
+            </div>
+          </div>
+
+          <div id="cheatsheet-cards-grid" class="cheatsheet-grid">
+            <!-- Динамически заполняется -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Нижняя панель навигации для iPhone (Mobile Tabbar) -->
+    <nav id="mobile-tabbar">
+      <button class="tabbar-item active" data-view="dashboard">
+        <span class="tabbar-icon">📊</span>
+        <span class="tabbar-label">Обзор</span>
+      </button>
+      <button class="tabbar-item" data-view="catalog">
+        <span class="tabbar-icon">📚</span>
+        <span class="tabbar-label">Темы</span>
+      </button>
+      <button class="tabbar-item" data-view="flashcards">
+        <span class="tabbar-icon">🃏</span>
+        <span class="tabbar-label">Карточки</span>
+      </button>
+      <button class="tabbar-item" data-view="quiz">
+        <span class="tabbar-icon">🎯</span>
+        <span class="tabbar-label">Тесты</span>
+      </button>
+      <button class="tabbar-item" data-view="exam">
+        <span class="tabbar-icon">🎓</span>
+        <span class="tabbar-label">Экзамен</span>
+      </button>
+      <button class="tabbar-item" data-view="cheatsheet">
+        <span class="tabbar-icon">⚡</span>
+        <span class="tabbar-label">Шпора</span>
+      </button>
+    </nav>
+
+    <!-- Модальное окно установки PWA на iPhone / Mac -->
+    <div id="install-modal" class="modal-backdrop" style="display:none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <img src="icon-192.png" alt="App Icon" class="modal-icon">
+          <div>
+            <h3>Установка приложения</h3>
+            <p>Работает офлайн без интернета</p>
+          </div>
+          <button id="btn-close-modal" class="close-modal-btn">✕</button>
+        </div>
+        
+        <div class="modal-content">
+          <div class="instruction-box ios-guide">
+            <h4>📲 Инструкция для iPhone (Safari):</h4>
+            <ol>
+              <li>Нажмите кнопку <b>«Поделиться»</b> (значок квадрата со стрелкой вверх внизу экрана Safari).</li>
+              <li>Прокрутите список вниз и выберите <b>«На экран «Домой»</b> (Add to Home Screen).</li>
+              <li>Нажмите <b>«Добавить»</b> в правом верхнем углу.</li>
+              <li>Приложение появится как полноценная иконка на рабочем столе и будет открываться без рамок браузера!</li>
+            </ol>
+          </div>
+
+          <div class="instruction-box mac-guide">
+            <h4>💻 Инструкция для Mac (Safari / Chrome):</h4>
+            <ol>
+              <li>В Safari: меню <b>Файл → Добавить в Dock</b>.</li>
+              <li>В Google Chrome: значок установки в адресной строке справа (или меню → Установить приложение).</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-modal-done" class="primary-btn full-width">Понятно, закрыть</button>
+        </div>
+      </div>
+    </div>
+
+  <!-- Всплывающее уведомление об обновлении (Toast) -->
+  <div id="update-toast" class="update-toast-banner" style="display: none;">
+    <div class="update-toast-icon">🚀</div>
+    <div class="update-toast-body">
+      <div class="update-toast-title">Доступно обновление конспекта!</div>
+      <div class="update-toast-desc" id="update-toast-desc">Вышла новая версия материалов.</div>
+    </div>
+    <div class="update-toast-actions">
+      <button id="btn-update-now" class="btn-update-action">Обновить</button>
+      <button id="btn-update-dismiss" class="btn-update-close" aria-label="Закрыть">✕</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="exam_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
