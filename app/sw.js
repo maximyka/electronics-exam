@@ -1,10 +1,11 @@
-const CACHE_NAME = 'electronics-exam-v1.5.1';
+const CACHE_NAME = 'electronics-exam-v1.6.0';
 const ASSETS = [
   './',
   './index.html',
   './app.css',
   './app.js',
   './exam_data.js',
+  './labs_data.js',
   './version.json',
   './katex/katex.min.css',
   './katex/katex.min.js',

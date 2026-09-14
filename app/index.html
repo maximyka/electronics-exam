@@ -94,10 +94,15 @@
           <span class="nav-label">Словарь терминов</span>
           <span class="nav-count" id="badge-glossary-count">80</span>
         </button>
-        <button class="nav-item" data-view="practice">
+        <button class="nav-item" data-view="labs">
           <span class="nav-icon">🔬</span>
-          <span class="nav-label">Лабы и Практика</span>
-          <span class="nav-badge highlight">10 задач</span>
+          <span class="nav-label">Лабораторные</span>
+          <span class="nav-badge highlight">6 лаб</span>
+        </button>
+        <button class="nav-item" data-view="practice">
+          <span class="nav-icon">🧮</span>
+          <span class="nav-label">Задачи и Расчеты</span>
+          <span class="nav-count">10 задач</span>
         </button>
         <button class="nav-item" data-view="flashcards">
           <span class="nav-icon">🃏</span>
@@ -131,7 +136,7 @@
         </button>
         <div class="sidebar-version-badge" id="sidebar-version-badge">
           <span class="version-dot"></span>
-          <span id="app-version-tag">v1.5.1</span>
+          <span id="app-version-tag">v1.6.0</span>
           <button id="btn-check-updates" class="btn-icon-mini" title="Проверить обновления">🔄</button>
         </div>
       </div>
@@ -513,16 +518,18 @@
           <!-- Сама 3D-карточка со свайпами и стрелками -->
           <div class="fc-stage">
             <button id="btn-fc-arrow-prev" class="fc-side-arrow prev" title="Предыдущая карточка" aria-label="Предыдущая карточка">‹</button>
-            <div id="active-flashcard" class="flashcard-card" tabindex="0">
-              <div class="card-face card-front">
-                <div class="card-top-tag" id="fc-front-tag">ВОПРОС / ТЕРМИН</div>
-                <div class="card-main-text" id="fc-front-text">Вопрос...</div>
-                <div class="card-hint">👆 Нажмите для переворота • свайп для перелистывания</div>
-              </div>
-              <div class="card-face card-back">
-                <div class="card-top-tag answer" id="fc-back-tag">ОТВЕТ / СУТЬ</div>
-                <div class="card-main-text answer-text" id="fc-back-text">Ответ...</div>
-                <div class="card-hint">Оцените свои знания ниже или свайпайте дальше 👇</div>
+            <div class="flashcard-track" id="fc-card-track">
+              <div id="active-flashcard" class="flashcard-card" tabindex="0">
+                <div class="card-face card-front">
+                  <div class="card-top-tag" id="fc-front-tag">ВОПРОС / ТЕРМИН</div>
+                  <div class="card-main-text" id="fc-front-text">Вопрос...</div>
+                  <div class="card-hint">👆 Нажмите для переворота • свайп для перелистывания</div>
+                </div>
+                <div class="card-face card-back">
+                  <div class="card-top-tag answer" id="fc-back-tag">ОТВЕТ / СУТЬ</div>
+                  <div class="card-main-text answer-text" id="fc-back-text">Ответ...</div>
+                  <div class="card-hint">Оцените свои знания ниже или свайпайте дальше 👇</div>
+                </div>
               </div>
             </div>
             <button id="btn-fc-arrow-next" class="fc-side-arrow next" title="Следующая карточка" aria-label="Следующая карточка">›</button>
@@ -849,23 +856,56 @@
         </div>
       </section>
 
-      <!-- View: ЛАБОРАТОРНЫЕ И ПРАКТИКА (Practice & Labs) -->
+      <!-- View: ЛАБОРАТОРНЫЙ ПРАКТИКУМ (Labs) -->
+      <section id="view-labs" class="app-view">
+        <div class="view-inner labs-inner">
+          <div class="labs-header">
+            <div class="labs-title-group">
+              <div class="labs-badge-pill">🔬 Кафедральный практикум</div>
+              <h1>Лабораторные работы</h1>
+              <p class="section-desc">Полный разбор 6 лабораторных работ курса по методическим указаниям кафедры и стенду «Учтех-Профи»: физическая теория, формулы, схемы соединений, оцифрованные экспериментальные таблицы замеров и интерактивный тренажер вопросов к защите.</p>
+            </div>
+            
+            <div class="labs-stats-summary">
+              <div class="lab-stat-box">
+                <span class="stat-num" id="labs-total-count">6</span>
+                <span class="stat-lbl">Лаб. работ</span>
+              </div>
+              <div class="lab-stat-box">
+                <span class="stat-num" id="labs-questions-count">48</span>
+                <span class="stat-lbl">Вопросов к защите</span>
+              </div>
+              <div class="lab-stat-box highlight">
+                <span class="stat-num" id="labs-learned-count">0</span>
+                <span class="stat-lbl">Освоено вопросов</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Панель выбора лабораторной работы (Карточки-селекторы) -->
+          <div class="labs-picker-bar" id="labs-picker-bar">
+            <!-- Динамически заполняется -->
+          </div>
+
+          <!-- Детальный контейнер активной лабораторной работы -->
+          <div id="active-lab-container" class="active-lab-container">
+            <!-- Динамически заполняется -->
+          </div>
+        </div>
+      </section>
+
+      <!-- View: ЗАДАЧИ И ПРАКТИКА (Practice Tasks) -->
       <section id="view-practice" class="app-view">
         <div class="view-inner practice-inner">
           <div class="practice-header">
             <div class="practice-title-group">
-              <h1>🔬 Лабораторные и Задачи</h1>
-              <p class="section-desc">Методические материалы по 5 лабораторным работам курса и интерактивный практикум решения экзаменационных расчетных задач с мгновенной проверкой ответа.</p>
+              <h1>🧮 Экзаменационные задачи и расчеты</h1>
+              <p class="section-desc">Интерактивный практикум решения 10 экзаменационных расчетных задач курса с проверкой числового ответа, подсказками и пошаговым решением.</p>
             </div>
-            <!-- Переключатель режима: Задачи / Лабы -->
             <div class="practice-tabs-switch">
               <button class="practice-subtab-btn active" id="btn-subtab-tasks">
-                <span>🧮 Решение задач</span>
+                <span>🧮 10 расчетных задач</span>
                 <span class="subtab-badge" id="tasks-solved-badge">0 / 10</span>
-              </button>
-              <button class="practice-subtab-btn" id="btn-subtab-labs">
-                <span>🔬 Лабораторные (1–5)</span>
-                <span class="subtab-badge">5 работ</span>
               </button>
             </div>
           </div>
@@ -959,9 +999,13 @@
         <span class="tabbar-icon">📖</span>
         <span class="tabbar-label">Словарь</span>
       </button>
-      <button class="tabbar-item" data-view="practice">
+      <button class="tabbar-item" data-view="labs">
         <span class="tabbar-icon">🔬</span>
-        <span class="tabbar-label">Практика</span>
+        <span class="tabbar-label">Лабы</span>
+      </button>
+      <button class="tabbar-item" data-view="practice">
+        <span class="tabbar-icon">🧮</span>
+        <span class="tabbar-label">Задачи</span>
       </button>
       <button class="tabbar-item" data-view="quiz">
         <span class="tabbar-icon">🎯</span>
@@ -1079,6 +1123,7 @@
 
   <!-- Scripts -->
   <script src="exam_data.js"></script>
+  <script src="labs_data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
